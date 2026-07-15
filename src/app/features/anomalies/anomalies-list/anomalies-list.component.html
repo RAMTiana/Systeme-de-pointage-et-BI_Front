@@ -1,0 +1,154 @@
+<div class="topbar">
+  <h2>Anomalies</h2>
+  <div class="actions">
+    <select [(ngModel)]="statutFiltre" (ngModelChange)="surChangementFiltre()">
+      <option [ngValue]="null">Tous statuts</option>
+      <option [ngValue]="'en_attente'">En attente</option>
+      <option [ngValue]="'justifiee'">Justifiée</option>
+      <option [ngValue]="'non_justifiee'">Non justifiée</option>
+    </select>
+  </div>
+</div>
+
+<div class="filters">
+  <select [(ngModel)]="idServiceFiltre" (ngModelChange)="surChangementFiltre()">
+    <option [ngValue]="null">Tous les services</option>
+    @for (service of services(); track service.id_service) {
+      <option [ngValue]="service.id_service">{{ service.nom_service }}</option>
+    }
+  </select>
+  <select [(ngModel)]="typeFiltre" (ngModelChange)="surChangementFiltre()">
+    <option [ngValue]="null">Tous types</option>
+    <option [ngValue]="'retard'">Retard</option>
+    <option [ngValue]="'absence'">Absence</option>
+    <option [ngValue]="'depart_anticipe'">Départ anticipé</option>
+  </select>
+  <input type="date" [(ngModel)]="dateDebut" (ngModelChange)="surChangementFiltre()" />
+  <input type="date" [(ngModel)]="dateFin" (ngModelChange)="surChangementFiltre()" />
+</div>
+
+@if (erreur()) {
+  <div class="card" style="border-color: var(--srb-coral); margin-bottom: 16px">
+    <p style="color: var(--srb-coral); margin: 0">{{ erreur() }}</p>
+  </div>
+}
+
+<div class="card" style="padding: 0">
+  @if (enChargement()) {
+    <p class="empty-hint" style="padding: 16px">Chargement des anomalies…</p>
+  } @else if (!anomalies().length) {
+    <p class="empty-hint" style="padding: 16px">Aucune anomalie ne correspond à ces critères.</p>
+  } @else {
+    <table>
+      <tr>
+        <th>Agent</th>
+        <th>Type</th>
+        <th>Date</th>
+        <th>Statut</th>
+        <th></th>
+      </tr>
+      @for (anomalie of anomalies(); track anomalie.id_anomalie) {
+        <tr>
+          <td class="agent-cell">
+            <div class="agent-init">{{ initiales(anomalie) }}</div>
+            <span class="name">
+              {{ anomalie.agent ? anomalie.agent.prenom + ' ' + anomalie.agent.nom : 'Agent #' + anomalie.id_agent }}
+            </span>
+          </td>
+          <td>
+            <span class="badge" [class.amber]="anomalie.type_anomalie !== 'absence'" [class.red]="anomalie.type_anomalie === 'absence'">
+              {{ libelleType(anomalie.type_anomalie) }}
+            </span>
+          </td>
+          <td>{{ anomalie.date_detection | date: 'dd/MM/y' }}</td>
+          <td>
+            <span
+              class="badge"
+              [class.gray]="anomalie.statut_justification === 'en_attente'"
+              [class.green]="anomalie.statut_justification === 'justifiee'"
+              [class.red]="anomalie.statut_justification === 'non_justifiee'"
+            >
+              {{ libelleStatut(anomalie.statut_justification) }}
+            </span>
+          </td>
+          <td><i class="ti ti-eye icon-btn" (click)="ouvrirExamen(anomalie)"></i></td>
+        </tr>
+      }
+    </table>
+
+    <div class="pagination" style="padding: 12px 16px">
+      <span>{{ total() }} anomalie{{ total() > 1 ? 's' : '' }} au total</span>
+      <div class="pages">
+        <button (click)="pagePrecedente()" [disabled]="pageCourante === 1"><i class="ti ti-chevron-left"></i></button>
+        <button class="on">{{ pageCourante }} / {{ nombreDePages }}</button>
+        <button (click)="pageSuivante()" [disabled]="pageCourante === nombreDePages">
+          <i class="ti ti-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  }
+</div>
+
+@if (anomalieSelectionnee(); as anomalie) {
+  <div class="modal-overlay" (click)="fermerExamen()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>{{ peutTraiter ? "Examiner l'anomalie" : "Détail de l'anomalie" }}</h3>
+      <p class="sub">
+        {{ anomalie.agent ? anomalie.agent.prenom + ' ' + anomalie.agent.nom : 'Agent #' + anomalie.id_agent }}
+        — {{ libelleType(anomalie.type_anomalie) }} du {{ anomalie.date_detection | date: 'dd/MM/y' }}
+      </p>
+
+      @if (anomalie.alertes.length) {
+        <div class="field">
+          <label>Alertes envoyées</label>
+          @for (alerte of anomalie.alertes; track alerte.id_alerte) {
+            <p class="muted" style="margin: 2px 0">
+              {{ alerte.canal === 'email' ? 'E-mail' : 'SMS' }} à {{ alerte.destinataire }} —
+              {{ alerte.statut === 'envoyee' ? 'envoyée' : 'échec' }} le {{ alerte.date_envoi | date: 'dd/MM/y HH:mm' }}
+            </p>
+          }
+        </div>
+      }
+
+      @if (peutTraiter && anomalie.statut_justification === 'en_attente') {
+        <div class="field">
+          <label>Motif du justificatif (facultatif si non justifiée)</label>
+          <textarea placeholder="Ex. embouteillage, rendez-vous médical..." [(ngModel)]="motif"></textarea>
+        </div>
+        <div class="field">
+          <label>Pièce jointe (référence / chemin, facultatif)</label>
+          <input type="text" placeholder="Ex. certificat_medical.pdf" [(ngModel)]="pieceJointe" />
+        </div>
+
+        @if (erreurExamen()) {
+          <p style="color: var(--srb-coral); font-size: 12.5px; margin: -6px 0 12px">{{ erreurExamen() }}</p>
+        }
+
+        <div class="modal-actions">
+          <button class="btn" [disabled]="enTraitement()" (click)="decider(false)">
+            <i class="ti ti-x"></i> Maintenir non justifiée
+          </button>
+          <button class="btn accent" [disabled]="enTraitement()" (click)="decider(true)">
+            <i class="ti ti-check"></i> Justifier
+          </button>
+        </div>
+      } @else {
+        @if (anomalie.justificatif) {
+          <div class="field">
+            <label>Motif retenu</label>
+            <input type="text" disabled [value]="anomalie.justificatif.motif" />
+          </div>
+          @if (anomalie.justificatif.piece_jointe_chemin) {
+            <div class="field">
+              <label>Pièce jointe</label>
+              <input type="text" disabled [value]="anomalie.justificatif.piece_jointe_chemin" />
+            </div>
+          }
+        }
+        <div class="modal-actions">
+          <button class="btn accent" (click)="fermerExamen()"><i class="ti ti-x"></i> Fermer</button>
+        </div>
+      }
+    </div>
+  </div>
+}
