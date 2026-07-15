@@ -1,0 +1,115 @@
+<div class="topbar">
+  <h2>Agents</h2>
+  <div class="actions">
+    <div class="search-box">
+      <i class="ti ti-search"></i>
+      <input placeholder="Nom, matricule..." [(ngModel)]="recherche" (ngModelChange)="surSaisieRecherche()" />
+    </div>
+    @if (peutGerer) {
+      <button class="btn accent" (click)="ouvrirCreation()"><i class="ti ti-plus"></i> Nouvel agent</button>
+    }
+  </div>
+</div>
+
+<div class="filters">
+  <select [(ngModel)]="idServiceFiltre" (ngModelChange)="surChangementFiltre()">
+    <option [ngValue]="null">Tous les services</option>
+    @for (service of services(); track service.id_service) {
+      <option [ngValue]="service.id_service">{{ service.nom_service }}</option>
+    }
+  </select>
+  <select [(ngModel)]="statutFiltre" (ngModelChange)="surChangementFiltre()">
+    <option [ngValue]="null">Tous les statuts</option>
+    <option [ngValue]="'actif'">Actif</option>
+    <option [ngValue]="'desactive'">Désactivé</option>
+  </select>
+</div>
+
+@if (erreur()) {
+  <div class="card" style="border-color: var(--srb-coral); margin-bottom: 16px">
+    <p style="color: var(--srb-coral); margin: 0">{{ erreur() }}</p>
+  </div>
+}
+
+<div class="card" style="padding: 0">
+  @if (enChargement()) {
+    <p class="empty-hint" style="padding: 16px">Chargement des agents…</p>
+  } @else if (!agents().length) {
+    <p class="empty-hint" style="padding: 16px">Aucun agent ne correspond à ces critères.</p>
+  } @else {
+    <table>
+      <tr>
+        <th>Agent</th>
+        <th>Matricule</th>
+        <th>Fonction</th>
+        <th>Service</th>
+        <th>Statut</th>
+        <th>Consent. facial</th>
+        @if (peutGerer) {
+          <th></th>
+        }
+      </tr>
+      @for (agent of agents(); track agent.id_agent) {
+        <tr>
+          <td class="agent-cell">
+            <div class="agent-init">{{ initiales(agent) }}</div>
+            <span class="name">{{ agent.prenom }} {{ agent.nom }}</span>
+          </td>
+          <td class="muted">{{ agent.matricule }}</td>
+          <td>{{ agent.fonction || '—' }}</td>
+          <td>{{ agent.service?.nom_service || '—' }}</td>
+          <td>
+            <span class="badge" [class.green]="agent.statut === 'actif'" [class.gray]="agent.statut === 'desactive'">
+              {{ agent.statut === 'actif' ? 'Actif' : 'Désactivé' }}
+            </span>
+          </td>
+          <td>
+            <span class="badge" [class.blue]="agent.consentement_facial" [class.gray]="!agent.consentement_facial">
+              {{ agent.consentement_facial ? 'Oui' : 'Non' }}
+            </span>
+          </td>
+          @if (peutGerer) {
+            <td style="white-space: nowrap">
+              <i class="ti ti-pencil icon-btn" title="Modifier" (click)="ouvrirEdition(agent)"></i>
+              <i
+                class="ti icon-btn"
+                [class.ti-player-pause]="agent.statut === 'actif'"
+                [class.ti-player-play]="agent.statut === 'desactive'"
+                [title]="agent.statut === 'actif' ? 'Désactiver' : 'Réactiver'"
+                (click)="changerStatut(agent)"
+              ></i>
+              <i
+                class="ti ti-face-id icon-btn"
+                title="Basculer le consentement facial"
+                (click)="changerConsentementFacial(agent)"
+              ></i>
+              <i class="ti ti-trash icon-btn" title="Supprimer" (click)="supprimerAgent(agent)"></i>
+            </td>
+          }
+        </tr>
+      }
+    </table>
+
+    <div class="pagination" style="padding: 12px 16px">
+      <span>{{ total() }} agent{{ total() > 1 ? 's' : '' }} au total</span>
+      <div class="pages">
+        <button (click)="pagePrecedente()" [disabled]="pageCourante === 1"><i class="ti ti-chevron-left"></i></button>
+        <button class="on">{{ pageCourante }} / {{ nombreDePages }}</button>
+        <button (click)="pageSuivante()" [disabled]="pageCourante === nombreDePages">
+          <i class="ti ti-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  }
+</div>
+
+@if (modaleOuverte()) {
+  <app-agent-form-modal
+    [agent]="agentEnEdition()"
+    [services]="services()"
+    [enCours]="enregistrementEnCours()"
+    [erreur]="erreurModale()"
+    (fermer)="fermerModale()"
+    (enregistrer)="enregistrerAgent($event)"
+  ></app-agent-form-modal>
+}

@@ -1,0 +1,54 @@
+<div class="modal-overlay" (click)="fermer.emit()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>{{ agent ? "Modifier l'agent" : 'Nouvel agent' }}</h3>
+    <p class="sub">{{ agent ? agent.matricule : "Les champs marqués sont obligatoires" }}</p>
+
+    <form [formGroup]="formulaire" (ngSubmit)="soumettre()">
+      <div class="field">
+        <label for="matricule">Matricule</label>
+        <input id="matricule" type="text" formControlName="matricule" placeholder="SRB-0001" />
+        @if (formulaire.controls.matricule.invalid && formulaire.controls.matricule.touched) {
+          <div class="erreur-champ">Le matricule est obligatoire.</div>
+        }
+      </div>
+      <div class="field">
+        <label for="nom">Nom</label>
+        <input id="nom" type="text" formControlName="nom" />
+        @if (formulaire.controls.nom.invalid && formulaire.controls.nom.touched) {
+          <div class="erreur-champ">Le nom est obligatoire.</div>
+        }
+      </div>
+      <div class="field">
+        <label for="prenom">Prénom</label>
+        <input id="prenom" type="text" formControlName="prenom" />
+        @if (formulaire.controls.prenom.invalid && formulaire.controls.prenom.touched) {
+          <div class="erreur-champ">Le prénom est obligatoire.</div>
+        }
+      </div>
+      <div class="field">
+        <label for="fonction">Fonction</label>
+        <input id="fonction" type="text" formControlName="fonction" placeholder="Ex. Chef de bureau" />
+      </div>
+      <div class="field">
+        <label for="idService">Service principal</label>
+        <select id="idService" formControlName="id_service">
+          <option [ngValue]="null">Aucun</option>
+          @for (service of services; track service.id_service) {
+            <option [ngValue]="service.id_service">{{ service.nom_service }}</option>
+          }
+        </select>
+      </div>
+
+      @if (erreur) {
+        <p class="message-erreur">{{ erreur }}</p>
+      }
+
+      <div class="modal-actions">
+        <button type="button" class="btn" (click)="fermer.emit()">Annuler</button>
+        <button type="submit" class="btn accent" [disabled]="enCours">
+          <i class="ti ti-check"></i> {{ enCours ? 'Enregistrement…' : agent ? 'Enregistrer' : 'Créer' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
