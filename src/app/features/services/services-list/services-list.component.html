@@ -1,12 +1,12 @@
 <div class="topbar">
-  <h2>Services</h2>
+  <h2>Divisions</h2>
   <div class="actions">
     <div class="search-box">
       <i class="ti ti-search"></i>
-      <input placeholder="Nom du service..." [(ngModel)]="recherche" (ngModelChange)="surSaisieRecherche()" />
+      <input placeholder="Nom de la division..." [(ngModel)]="recherche" (ngModelChange)="surSaisieRecherche()" />
     </div>
     @if (peutGerer) {
-      <button class="btn accent" (click)="ouvrirCreation()"><i class="ti ti-plus"></i> Nouveau service</button>
+      <button class="btn accent" (click)="ouvrirCreation()"><i class="ti ti-plus"></i> Nouvelle division</button>
     }
   </div>
 </div>
@@ -19,13 +19,13 @@
 
 <div class="card" style="padding: 0">
   @if (enChargement()) {
-    <p class="empty-hint" style="padding: 16px">Chargement des services…</p>
+    <p class="empty-hint" style="padding: 16px">Chargement des divisions…</p>
   } @else if (!services().length) {
-    <p class="empty-hint" style="padding: 16px">Aucun service ne correspond à cette recherche.</p>
+    <p class="empty-hint" style="padding: 16px">Aucune division ne correspond à cette recherche.</p>
   } @else {
     <table>
       <tr>
-        <th>Service</th>
+        <th>Division</th>
         <th>Description</th>
         <th style="text-align: right">Agents rattachés</th>
         @if (peutGerer) {

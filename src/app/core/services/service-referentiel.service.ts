@@ -12,7 +12,7 @@ export interface ServicePayload {
 
 @Injectable({ providedIn: 'root' })
 export class ServiceReferentielService {
-  private readonly base = `${environment.apiUrl}/services`;
+  private readonly base = `${environment.apiUrl}/divisions`;
 
   constructor(private readonly http: HttpClient) {}
 

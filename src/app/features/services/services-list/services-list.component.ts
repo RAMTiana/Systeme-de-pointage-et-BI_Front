@@ -57,7 +57,7 @@ export class ServicesListComponent implements OnInit, OnDestroy {
       .pipe(finalize(() => this.enChargement.set(false)))
       .subscribe({
         next: (services) => this.services.set(services),
-        error: () => this.erreur.set("Impossible de charger la liste des services. Vérifiez que l'API est démarrée."),
+        error: () => this.erreur.set("Impossible de charger la liste des divisions. Vérifiez que l'API est démarrée."),
       });
   }
 
@@ -94,8 +94,8 @@ export class ServicesListComponent implements OnInit, OnDestroy {
       error: (err) =>
         this.erreurModale.set(
           err.status === 409
-            ? 'Un service porte déjà ce nom.'
-            : "Impossible d'enregistrer le service. Vérifiez les champs saisis."
+            ? 'Une division porte déjà ce nom.'
+            : "Impossible d'enregistrer la division. Vérifiez les champs saisis."
         ),
     });
   }
@@ -105,11 +105,11 @@ export class ServicesListComponent implements OnInit, OnDestroy {
       service.nombre_agents > 0
         ? ` ${service.nombre_agents} agent(s) actuellement rattaché(s) seront détachés (service principal remis à vide).`
         : '';
-    if (!confirm(`Supprimer le service « ${service.nom_service} » ?${avertissement}`)) return;
+    if (!confirm(`Supprimer la division « ${service.nom_service} » ?${avertissement}`)) return;
 
     this.serviceReferentiel.supprimer(service.id_service).subscribe({
       next: () => this.charger(),
-      error: () => this.erreur.set('Suppression impossible pour ce service.'),
+      error: () => this.erreur.set('Suppression impossible pour cette division.'),
     });
   }
 }

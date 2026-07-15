@@ -22,9 +22,14 @@ export const routes: Routes = [
         loadComponent: () => import('./features/agents/agents-list/agents-list.component').then((m) => m.AgentsListComponent),
       },
       {
-        path: 'services',
+        path: 'divisions',
         loadComponent: () =>
           import('./features/services/services-list/services-list.component').then((m) => m.ServicesListComponent),
+      },
+      {
+        path: 'services',
+        redirectTo: 'divisions',
+        pathMatch: 'full',
       },
       {
         path: 'pointage',
