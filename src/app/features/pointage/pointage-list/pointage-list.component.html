@@ -1,0 +1,157 @@
+<div class="topbar">
+  <h2>Pointage</h2>
+  <div class="actions">
+    <div class="search-box">
+      <i class="ti ti-search"></i>
+      <input placeholder="Agent, matricule..." [(ngModel)]="recherche" />
+    </div>
+  </div>
+</div>
+
+<div class="row-2" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 14px">
+  <div class="card" style="text-align: center">
+    <div class="icon-badge" style="background: #e6f1fb; color: #185fa5; margin: 0 auto 8px">
+      <i class="ti ti-qrcode"></i>
+    </div>
+    <h3>QR code dynamique</h3>
+    <p class="sub">Poste de pointage principal</p>
+  </div>
+  <div class="card" style="text-align: center">
+    <div class="icon-badge" style="background: var(--srb-teal-light); color: var(--srb-teal); margin: 0 auto 8px">
+      <i class="ti ti-credit-card"></i>
+    </div>
+    <h3>Badge</h3>
+    <p class="sub">Lecteur RFID — accueil</p>
+  </div>
+  <div class="card" style="text-align: center">
+    <div class="icon-badge" style="background: var(--srb-amber-light); color: var(--srb-amber); margin: 0 auto 8px">
+      <i class="ti ti-face-id"></i>
+    </div>
+    <h3>Reconnaissance faciale</h3>
+    <p class="sub">Nécessite le consentement de l'agent</p>
+  </div>
+</div>
+
+<div class="filters">
+  <select [(ngModel)]="idServiceFiltre" (ngModelChange)="surChangementFiltreServeur()">
+    <option [ngValue]="null">Tous les services</option>
+    @for (service of services(); track service.id_service) {
+      <option [ngValue]="service.id_service">{{ service.nom_service }}</option>
+    }
+  </select>
+  <select [(ngModel)]="typeFiltre" (ngModelChange)="surChangementFiltreServeur()">
+    <option [ngValue]="null">Tous types</option>
+    <option [ngValue]="'entree'">Entrée</option>
+    <option [ngValue]="'sortie'">Sortie</option>
+  </select>
+  <select [(ngModel)]="modeFiltre">
+    <option [ngValue]="null">Tous modes</option>
+    <option [ngValue]="'qr'">QR code</option>
+    <option [ngValue]="'badge'">Badge</option>
+    <option [ngValue]="'facial'">Facial</option>
+  </select>
+  <select [(ngModel)]="statutFiltre" (ngModelChange)="surChangementFiltreServeur()">
+    <option [ngValue]="null">Tous statuts</option>
+    <option [ngValue]="'valide'">Validé</option>
+    <option [ngValue]="'rejete'">Rejeté</option>
+    <option [ngValue]="'doublon'">Doublon</option>
+  </select>
+  <input type="date" [(ngModel)]="dateDebut" (ngModelChange)="surChangementFiltreServeur()" />
+  <input type="date" [(ngModel)]="dateFin" (ngModelChange)="surChangementFiltreServeur()" />
+</div>
+
+@if (erreur()) {
+  <div class="card" style="border-color: var(--srb-coral); margin-bottom: 16px">
+    <p style="color: var(--srb-coral); margin: 0">{{ erreur() }}</p>
+  </div>
+}
+
+<div class="card" style="padding: 0">
+  @if (enChargement()) {
+    <p class="empty-hint" style="padding: 16px">Chargement des pointages…</p>
+  } @else if (!pointagesAffiches().length) {
+    <p class="empty-hint" style="padding: 16px">Aucun pointage ne correspond à ces critères.</p>
+  } @else {
+    <table>
+      <tr>
+        <th>Agent</th>
+        <th>Date / heure</th>
+        <th>Type</th>
+        <th>Mode</th>
+        <th>Statut</th>
+      </tr>
+      @for (pointage of pointagesAffiches(); track pointage.id_pointage) {
+        <tr (click)="ouvrirDetail(pointage)" style="cursor: pointer">
+          <td class="agent-cell">
+            <div class="agent-init">{{ initiales(pointage) }}</div>
+            <span class="name">
+              {{ pointage.agent ? pointage.agent.prenom + ' ' + pointage.agent.nom : 'Agent #' + pointage.id_agent }}
+            </span>
+          </td>
+          <td>{{ pointage.date_heure | date: 'dd/MM/y HH:mm' }}</td>
+          <td><span class="badge blue">{{ pointage.type_pointage === 'entree' ? 'Entrée' : 'Sortie' }}</span></td>
+          <td class="muted"><i [class]="'ti ' + iconeMode(pointage.mode_pointage)"></i> {{ libelleMode(pointage.mode_pointage) }}</td>
+          <td>
+            <span
+              class="badge"
+              [class.green]="pointage.statut === 'valide'"
+              [class.red]="pointage.statut === 'doublon'"
+              [class.amber]="pointage.statut === 'rejete'"
+            >
+              {{ libelleStatut(pointage) }}
+            </span>
+          </td>
+        </tr>
+      }
+    </table>
+
+    <div class="pagination" style="padding: 12px 16px">
+      <span>{{ total() }} pointage{{ total() > 1 ? 's' : '' }} au total</span>
+      <div class="pages">
+        <button (click)="pagePrecedente()" [disabled]="pageCourante === 1"><i class="ti ti-chevron-left"></i></button>
+        <button class="on">{{ pageCourante }} / {{ nombreDePages }}</button>
+        <button (click)="pageSuivante()" [disabled]="pageCourante === nombreDePages">
+          <i class="ti ti-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  }
+</div>
+
+@if (pointageSelectionne(); as pointage) {
+  <div class="modal-overlay" (click)="fermerDetail()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>Détail du pointage</h3>
+      <p class="sub">
+        {{ pointage.agent ? pointage.agent.prenom + ' ' + pointage.agent.nom + ' (' + pointage.agent.matricule + ')' : 'Agent #' + pointage.id_agent }}
+      </p>
+
+      <div class="field">
+        <label>Date / heure</label>
+        <input type="text" disabled [value]="pointage.date_heure | date: 'dd/MM/y HH:mm:ss'" />
+      </div>
+      <div class="field">
+        <label>Type</label>
+        <input type="text" disabled [value]="pointage.type_pointage === 'entree' ? 'Entrée' : 'Sortie'" />
+      </div>
+      <div class="field">
+        <label>Mode</label>
+        <input type="text" disabled [value]="libelleMode(pointage.mode_pointage)" />
+      </div>
+      <div class="field">
+        <label>Statut</label>
+        <input type="text" disabled [value]="libelleStatut(pointage)" />
+      </div>
+      @if (pointage.agent?.service) {
+        <div class="field">
+          <label>Service</label>
+          <input type="text" disabled [value]="pointage.agent!.service!.nom_service" />
+        </div>
+      }
+
+      <div class="modal-actions">
+        <button class="btn accent" (click)="fermerDetail()"><i class="ti ti-x"></i> Fermer</button>
+      </div>
+    </div>
+  </div>
+}
