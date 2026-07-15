@@ -1,0 +1,34 @@
+<div class="shell">
+  <div class="sidebar">
+    <div class="brand">
+      <div class="mark">SRB</div>
+      <div class="txt">SRB Haute<br />Matsiatra<span>Pointage &amp; BI</span></div>
+    </div>
+
+    @for (groupe of groupesNav; track groupe.libelle) {
+      <div class="nav-group-label">{{ groupe.libelle }}</div>
+      @for (item of groupe.items; track item.lien) {
+        @if (itemVisible(item)) {
+          <a class="nav-item" [routerLink]="item.lien" routerLinkActive="active">
+            <i class="ti" [ngClass]="item.icone"></i> {{ item.libelle }}
+          </a>
+        }
+      }
+    }
+
+    <div class="sidebar-foot">
+      <div class="avatar-sm">{{ initiales() }}</div>
+      <div class="who">
+        {{ authService.utilisateur()?.nom_complet }}
+        <span>{{ authService.utilisateur()?.role?.nom_role }}</span>
+      </div>
+    </div>
+    <button class="btn-deconnexion" type="button" (click)="seDeconnecter()">
+      <i class="ti ti-logout"></i> Déconnexion
+    </button>
+  </div>
+
+  <div class="main">
+    <router-outlet></router-outlet>
+  </div>
+</div>

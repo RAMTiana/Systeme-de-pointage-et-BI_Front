@@ -1,0 +1,146 @@
+.shell {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.sidebar {
+  background: var(--srb-blue-dark);
+  color: #cfe0ea;
+  padding: 16px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 8px 18px;
+  color: #fff;
+}
+.brand .mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background: var(--srb-teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.brand .txt {
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+.brand .txt span {
+  display: block;
+  font-size: 10px;
+  color: #9db4c4;
+  font-weight: 400;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  color: #b9cbd8;
+  cursor: pointer;
+  margin-bottom: 2px;
+  text-decoration: none;
+}
+.nav-item i {
+  font-size: 17px;
+  width: 18px;
+  text-align: center;
+}
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+.nav-item.active {
+  background: var(--srb-teal);
+  color: #fff;
+  font-weight: 500;
+}
+
+.nav-group-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6f889a;
+  margin: 14px 8px 6px;
+}
+
+.sidebar-foot {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 8px 4px;
+}
+.avatar-sm {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--srb-teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+.sidebar-foot .who {
+  font-size: 12px;
+  color: #fff;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.sidebar-foot .who span {
+  display: block;
+  font-size: 10.5px;
+  color: #9db4c4;
+  font-weight: 400;
+}
+
+.btn-deconnexion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 7px;
+  background: transparent;
+  color: #cfe0ea;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-deconnexion i {
+  font-size: 15px;
+}
+.btn-deconnexion:hover {
+  background: rgba(220, 60, 60, 0.15);
+  border-color: rgba(220, 60, 60, 0.4);
+  color: #ff8080;
+}
+
+.main {
+  padding: 20px 26px;
+  overflow: auto;
+}
