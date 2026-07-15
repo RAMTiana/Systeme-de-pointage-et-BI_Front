@@ -1,0 +1,33 @@
+<div class="modal-overlay" (click)="fermer.emit()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Réinitialiser le mot de passe</h3>
+    <p class="sub">{{ utilisateur.nom_complet }} ({{ utilisateur.login }})</p>
+
+    <div class="field">
+      <label for="nouveauMdp">Nouveau mot de passe</label>
+      <input id="nouveauMdp" type="password" [(ngModel)]="nouveauMotDePasse" placeholder="8 caractères minimum" />
+    </div>
+    <div class="field">
+      <label for="confirmationMdp">Confirmation</label>
+      <input id="confirmationMdp" type="password" [(ngModel)]="confirmation" />
+    </div>
+
+    @if (erreurLocale) {
+      <p class="message-erreur">{{ erreurLocale }}</p>
+    } @else if (erreur) {
+      <p class="message-erreur">{{ erreur }}</p>
+    }
+
+    <div class="modal-actions">
+      <button type="button" class="btn" (click)="fermer.emit()">Annuler</button>
+      <button
+        type="button"
+        class="btn accent"
+        [disabled]="enCours || !nouveauMotDePasse || nouveauMotDePasse.length < 8 || nouveauMotDePasse !== confirmation"
+        (click)="soumettre()"
+      >
+        <i class="ti ti-key"></i> {{ enCours ? 'Enregistrement…' : 'Réinitialiser' }}
+      </button>
+    </div>
+  </div>
+</div>

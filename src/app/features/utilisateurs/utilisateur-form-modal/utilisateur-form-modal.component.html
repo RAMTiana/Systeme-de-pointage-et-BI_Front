@@ -1,0 +1,67 @@
+<div class="modal-overlay" (click)="fermer.emit()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>{{ utilisateur ? 'Modifier le compte' : 'Nouveau compte' }}</h3>
+    <p class="sub">{{ utilisateur ? utilisateur.login : 'Les champs marqués sont obligatoires' }}</p>
+
+    <form [formGroup]="formulaire" (ngSubmit)="soumettre()">
+      <div class="field">
+        <label for="login">Login</label>
+        <input id="login" type="text" formControlName="login" placeholder="rakoto.j" />
+        @if (formulaire.controls.login.invalid && formulaire.controls.login.touched) {
+          <div class="erreur-champ">Le login est obligatoire.</div>
+        }
+      </div>
+      <div class="field">
+        <label for="email">E-mail</label>
+        <input id="email" type="email" formControlName="email" placeholder="rakoto.j@srb-hautematsiatra.mg" />
+        @if (formulaire.controls.email.invalid && formulaire.controls.email.touched) {
+          <div class="erreur-champ">Une adresse e-mail valide est obligatoire.</div>
+        }
+      </div>
+      <div class="field">
+        <label for="nomComplet">Nom complet</label>
+        <input id="nomComplet" type="text" formControlName="nom_complet" />
+        @if (formulaire.controls.nom_complet.invalid && formulaire.controls.nom_complet.touched) {
+          <div class="erreur-champ">Le nom complet est obligatoire.</div>
+        }
+      </div>
+
+      @if (!utilisateur) {
+        <div class="field">
+          <label for="motDePasse">Mot de passe initial</label>
+          <input id="motDePasse" type="password" formControlName="mot_de_passe" placeholder="8 caractères minimum" />
+          @if (formulaire.controls.mot_de_passe.invalid && formulaire.controls.mot_de_passe.touched) {
+            <div class="erreur-champ">8 caractères minimum.</div>
+          }
+        </div>
+        <div class="field">
+          <label for="idRole">Rôle</label>
+          <select id="idRole" formControlName="id_role">
+            <option [ngValue]="null" disabled>Choisir un rôle</option>
+            @for (role of roles; track role.id_role) {
+              <option [ngValue]="role.id_role">{{ role.nom_role }}</option>
+            }
+          </select>
+          @if (formulaire.controls.id_role.invalid && formulaire.controls.id_role.touched) {
+            <div class="erreur-champ">Le rôle est obligatoire.</div>
+          }
+        </div>
+      } @else {
+        <p class="muted" style="margin: -4px 0 12px">
+          Le rôle et le mot de passe se modifient depuis les actions dédiées de la liste.
+        </p>
+      }
+
+      @if (erreur) {
+        <p class="message-erreur">{{ erreur }}</p>
+      }
+
+      <div class="modal-actions">
+        <button type="button" class="btn" (click)="fermer.emit()">Annuler</button>
+        <button type="submit" class="btn accent" [disabled]="enCours">
+          <i class="ti ti-check"></i> {{ enCours ? 'Enregistrement…' : utilisateur ? 'Enregistrer' : 'Créer' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
