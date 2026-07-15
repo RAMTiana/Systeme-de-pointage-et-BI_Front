@@ -1,0 +1,115 @@
+<div class="topbar">
+  <h2>Tableau de bord</h2>
+  <div class="actions">
+    <select [(ngModel)]="idServiceSelectionne" (ngModelChange)="surChangementService()">
+      <option [ngValue]="null">Tous les services</option>
+      @for (service of services(); track service.id_service) {
+        <option [ngValue]="service.id_service">{{ service.nom_service }}</option>
+      }
+    </select>
+    <button class="btn"><i class="ti ti-calendar"></i> Aujourd'hui, {{ aujourdHui | date: 'd MMM y' }}</button>
+  </div>
+</div>
+
+@if (erreur()) {
+  <div class="card" style="border-color: var(--srb-coral); margin-bottom: 16px;">
+    <p style="color: var(--srb-coral); margin: 0;">{{ erreur() }}</p>
+  </div>
+}
+
+@if (enChargement() && !tempsReel()) {
+  <p class="empty-hint">Chargement du tableau de bord…</p>
+} @else if (tempsReel()) {
+  @if (tempsReel(); as tr) {
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="lbl">
+        Présents aujourd'hui
+        <div class="icon-badge" style="background: var(--srb-teal-light); color: var(--srb-teal)">
+          <i class="ti ti-user-check"></i>
+        </div>
+      </div>
+      <div class="val">{{ tr.nombre_presents }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="lbl">
+        Absents
+        <div class="icon-badge" style="background: var(--srb-coral-light); color: var(--srb-coral)">
+          <i class="ti ti-user-off"></i>
+        </div>
+      </div>
+      <div class="val">{{ tr.nombre_absents }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="lbl">
+        Retardataires
+        <div class="icon-badge" style="background: var(--srb-amber-light); color: var(--srb-amber)">
+          <i class="ti ti-clock-exclamation"></i>
+        </div>
+      </div>
+      <div class="val">{{ tr.nombre_retardataires }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="lbl">
+        Taux de présence
+        <div class="icon-badge" style="background: #e6f1fb; color: #185fa5"><i class="ti ti-percentage"></i></div>
+      </div>
+      <div class="val">{{ tr.taux_presence !== null ? (tr.taux_presence | number: '1.1-1') + '%' : '—' }}</div>
+    </div>
+  </div>
+
+  <div class="row-2">
+    <div class="card">
+      <h3>Tendance du taux de présence</h3>
+      <p class="sub">30 derniers jours{{ idServiceSelectionne() ? '' : ' — tous services' }}</p>
+      <div style="height: 200px"><canvas #canvasTendance></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Comparaison entre services</h3>
+      <p class="sub">Taux de présence, période en cours</p>
+      <div style="height: 200px"><canvas #canvasServices></canvas></div>
+    </div>
+  </div>
+
+  <div class="row-2">
+    <div class="card">
+      <h3>Classement — ponctualité</h3>
+      <p class="sub">Agents les plus ponctuels ce mois-ci</p>
+      @if (classement().length) {
+        <table>
+          <tr>
+            <th>Agent</th>
+            <th>Service</th>
+            <th style="text-align: right">Retards</th>
+          </tr>
+          @for (agent of classement(); track agent.id_agent) {
+            <tr>
+              <td class="agent-cell">
+                <div class="agent-init">{{ agent.nom[0] }}{{ agent.prenom[0] }}</div>
+                <span class="name">{{ agent.prenom }} {{ agent.nom }}</span>
+              </td>
+              <td class="muted">{{ agent.nom_service }}</td>
+              <td style="text-align: right">
+                <span class="badge" [class.green]="agent.nombre_retards === 0" [class.amber]="agent.nombre_retards > 0">
+                  {{ agent.nombre_retards }}
+                </span>
+              </td>
+            </tr>
+          }
+        </table>
+      } @else {
+        <p class="empty-hint">Aucune donnée sur la période.</p>
+      }
+    </div>
+    <div class="card">
+      <h3>Prévision — taux de ponctualité</h3>
+      <p class="sub">Estimation indicative (régression simple)</p>
+      <div style="height: 170px"><canvas #canvasPrevision></canvas></div>
+      <p class="empty-hint">
+        <i class="ti ti-info-circle"></i> Estimation indicative fondée sur l'historique récent, à confirmer par
+        l'analyse de la hiérarchie.
+      </p>
+    </div>
+  </div>
+  }
+}
