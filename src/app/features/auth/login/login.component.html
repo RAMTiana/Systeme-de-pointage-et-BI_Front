@@ -1,118 +1,147 @@
 <div id="login-screen">
-  <div class="login-card">
-    <div class="login-logo">SRB</div>
-    <h1>Service Régional du Budget</h1>
-    <p class="sub">Haute Matsiatra — Système de pointage &amp; BI</p>
-
-    @if (!modeReinitialisation()) {
-      <form [formGroup]="formulaire" (ngSubmit)="seConnecter()">
-        <div class="field">
-          <label for="identifiant">Identifiant ou e-mail</label>
-          <input id="identifiant" type="text" formControlName="identifiant" placeholder="rakoto.j" autocomplete="username" />
+  <div class="login-shell">
+    <div class="login-card">
+      <div class="brand">
+        <div class="brand-icon"><i class="ti ti-building-bank"></i></div>
+        <div>
+          <p class="eyebrow">Accès sécurisé</p>
+          <h1>Service Régional du Budget</h1>
         </div>
-        <div class="field">
-          <label for="motDePasse">Mot de passe</label>
-          <input id="motDePasse" type="password" formControlName="motDePasse" placeholder="••••••••" autocomplete="current-password" />
-        </div>
+      </div>
+      <p class="sub">Haute Matsiatra — Système de pointage &amp; BI</p>
 
-        @if (erreur()) {
-          <p class="message-erreur">{{ erreur() }}</p>
-        }
-
-        <div class="login-links">
-          <a (click)="basculerReinitialisation(true)">Mot de passe oublié ?</a>
-        </div>
-
-        <button class="btn-primary" type="submit" [disabled]="enCours()">
-          {{ enCours() ? 'Connexion…' : 'Se connecter' }}
-        </button>
-      </form>
-
-      <div class="divider-or">ou</div>
-
-      @if (googleDisponible()) {
-        <!-- Bouton officiel Google Identity Services, rendu dynamiquement dans ce conteneur -->
-        <div class="google-button-hote" #googleButton></div>
-        @if (erreurGoogle()) {
-          <p class="message-erreur">{{ erreurGoogle() }}</p>
-        }
-      } @else {
-        <button
-          class="btn-google"
-          type="button"
-          disabled
-          title="Connexion Google — GOOGLE_CLIENT_ID non configuré (environment.ts)"
-        >
-          <i class="ti ti-brand-google"></i> Continuer avec Google
-        </button>
-      }
-    } @else {
-      @switch (etapeReinitialisation()) {
-        @case ('demande') {
-          <form [formGroup]="formulaireReinitialisation" (ngSubmit)="demanderReinitialisation()">
-            <p class="sub" style="margin-bottom: 1rem; text-align: left">
-              Saisissez votre identifiant ou e-mail : un code de réinitialisation vous sera envoyé par e-mail.
-            </p>
-            <div class="field">
-              <label for="identifiantReset">Identifiant ou e-mail</label>
-              <input id="identifiantReset" type="text" formControlName="identifiant" />
+      @if (!modeReinitialisation()) {
+        <form [formGroup]="formulaire" (ngSubmit)="seConnecter()">
+          <div class="field">
+            <label for="identifiant">Identifiant ou e-mail</label>
+            <div class="input-with-icon">
+              <i class="ti ti-user"></i>
+              <input id="identifiant" type="text" formControlName="identifiant" placeholder="rakoto.j" autocomplete="username" />
             </div>
-
-            <button class="btn-primary" type="submit" [disabled]="enCours()">
-              {{ enCours() ? 'Envoi…' : 'Envoyer le code' }}
-            </button>
-          </form>
-        }
-        @case ('code') {
-          <form [formGroup]="formulaireCode" (ngSubmit)="validerCode()">
-            @if (messageReinitialisation()) {
-              <p class="message-info" style="margin-bottom: 1rem">{{ messageReinitialisation() }}</p>
-            }
-            <div class="field">
-              <label for="code">Code reçu par e-mail (6 chiffres)</label>
-              <input id="code" type="text" formControlName="code" maxlength="6" inputmode="numeric" placeholder="123456" />
-            </div>
-            <div class="field">
-              <label for="nouveauMotDePasse">Nouveau mot de passe</label>
-              <input id="nouveauMotDePasse" type="password" formControlName="nouveauMotDePasse" autocomplete="new-password" />
-            </div>
-            <div class="field">
-              <label for="confirmationMotDePasse">Confirmer le mot de passe</label>
-              <input
-                id="confirmationMotDePasse"
-                type="password"
-                formControlName="confirmationMotDePasse"
-                autocomplete="new-password"
-              />
-            </div>
-
-            @if (erreurReinitialisation()) {
-              <p class="message-erreur">{{ erreurReinitialisation() }}</p>
-            }
-
-            <button class="btn-primary" type="submit" [disabled]="enCours()">
-              {{ enCours() ? 'Validation…' : 'Réinitialiser le mot de passe' }}
-            </button>
-          </form>
-          <div class="login-links" style="margin-top: 14px; justify-content: center">
-            <a (click)="demanderReinitialisation()">Renvoyer le code</a>
           </div>
-        }
-        @case ('terminee') {
-          <p class="message-info" style="margin-bottom: 1rem">
-            Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter.
-          </p>
-          <button class="btn-primary" type="button" (click)="basculerReinitialisation(false)">
-            Retour à la connexion
+          <div class="field">
+            <label for="motDePasse">Mot de passe</label>
+            <div class="input-with-icon">
+              <i class="ti ti-lock"></i>
+              <input id="motDePasse" type="password" formControlName="motDePasse" placeholder="••••••••" autocomplete="current-password" />
+            </div>
+          </div>
+
+          @if (erreur()) {
+            <p class="message-erreur">{{ erreur() }}</p>
+          }
+
+          <div class="login-links">
+            <a (click)="basculerReinitialisation(true)"><i class="ti ti-key"></i> Mot de passe oublié ?</a>
+          </div>
+
+          <button class="btn-primary" type="submit" [disabled]="enCours()">
+            <span>{{ enCours() ? 'Connexion…' : 'Se connecter' }}</span>
+            <i class="ti ti-arrow-right"></i>
+          </button>
+        </form>
+
+        <div class="divider-or">ou</div>
+
+        @if (googleDisponible()) {
+          <div class="google-button-hote" #googleButton></div>
+          @if (erreurGoogle()) {
+            <p class="message-erreur">{{ erreurGoogle() }}</p>
+          }
+        } @else {
+          <button
+            class="btn-google"
+            type="button"
+            disabled
+            title="Connexion Google — GOOGLE_CLIENT_ID non configuré (environment.ts)"
+          >
+            <i class="ti ti-brand-google"></i>
+            <span>Continuer avec Google</span>
           </button>
         }
-      }
+      } @else {
+        @switch (etapeReinitialisation()) {
+          @case ('demande') {
+            <form [formGroup]="formulaireReinitialisation" (ngSubmit)="demanderReinitialisation()">
+              <p class="sub reset-help">
+                Saisissez votre identifiant ou e-mail : un code de réinitialisation vous sera envoyé par e-mail.
+              </p>
+              <div class="field">
+                <label for="identifiantReset">Identifiant ou e-mail</label>
+                <div class="input-with-icon">
+                  <i class="ti ti-mail"></i>
+                  <input id="identifiantReset" type="text" formControlName="identifiant" />
+                </div>
+              </div>
 
-      @if (etapeReinitialisation() !== 'terminee') {
-        <div class="login-links" style="margin-top: 14px; justify-content: center">
-          <a (click)="basculerReinitialisation(false)">Retour à la connexion</a>
-        </div>
+              <button class="btn-primary" type="submit" [disabled]="enCours()">
+                <span>{{ enCours() ? 'Envoi…' : 'Envoyer le code' }}</span>
+                <i class="ti ti-send"></i>
+              </button>
+            </form>
+          }
+          @case ('code') {
+            <form [formGroup]="formulaireCode" (ngSubmit)="validerCode()">
+              @if (messageReinitialisation()) {
+                <p class="message-info">{{ messageReinitialisation() }}</p>
+              }
+              <div class="field">
+                <label for="code">Code reçu par e-mail (6 chiffres)</label>
+                <div class="input-with-icon">
+                  <i class="ti ti-number"></i>
+                  <input id="code" type="text" formControlName="code" maxlength="6" inputmode="numeric" placeholder="123456" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="nouveauMotDePasse">Nouveau mot de passe</label>
+                <div class="input-with-icon">
+                  <i class="ti ti-lock"></i>
+                  <input id="nouveauMotDePasse" type="password" formControlName="nouveauMotDePasse" autocomplete="new-password" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="confirmationMotDePasse">Confirmer le mot de passe</label>
+                <div class="input-with-icon">
+                  <i class="ti ti-lock-check"></i>
+                  <input
+                    id="confirmationMotDePasse"
+                    type="password"
+                    formControlName="confirmationMotDePasse"
+                    autocomplete="new-password"
+                  />
+                </div>
+              </div>
+
+              @if (erreurReinitialisation()) {
+                <p class="message-erreur">{{ erreurReinitialisation() }}</p>
+              }
+
+              <button class="btn-primary" type="submit" [disabled]="enCours()">
+                <span>{{ enCours() ? 'Validation…' : 'Réinitialiser le mot de passe' }}</span>
+                <i class="ti ti-refresh"></i>
+              </button>
+            </form>
+            <div class="login-links secondary-links">
+              <a (click)="demanderReinitialisation()"><i class="ti ti-rotate-2"></i> Renvoyer le code</a>
+            </div>
+          }
+          @case ('terminee') {
+            <p class="message-info">
+              Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter.
+            </p>
+            <button class="btn-primary" type="button" (click)="basculerReinitialisation(false)">
+              <i class="ti ti-arrow-left"></i>
+              <span>Retour à la connexion</span>
+            </button>
+          }
+        }
+
+        @if (etapeReinitialisation() !== 'terminee') {
+          <div class="login-links secondary-links">
+            <a (click)="basculerReinitialisation(false)"><i class="ti ti-arrow-left"></i> Retour à la connexion</a>
+          </div>
+        }
       }
-    }
+    </div>
   </div>
 </div>
