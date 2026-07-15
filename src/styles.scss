@@ -14,6 +14,7 @@
   --text: #1c2733;
   --text-mut: #5b6b7a;
   --text-soft: #8a97a3;
+  --shadow: 0 12px 36px rgba(15, 61, 92, 0.08);
 }
 
 * {
@@ -80,64 +81,72 @@ body {
   margin-bottom: 18px;
   flex-wrap: wrap;
   gap: 10px;
+  padding: 12px 0;
 }
 .topbar h2 {
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 1.08rem;
+  font-weight: 700;
   margin: 0;
+  color: var(--text);
 }
 .topbar .actions {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .btn {
-  height: 34px;
+  height: 38px;
   padding: 0 14px;
-  border-radius: 7px;
+  border-radius: 999px;
   border: 1px solid var(--border);
   background: #fff;
   font-size: 12.5px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   color: var(--text);
+  box-shadow: var(--shadow);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
 }
 .btn:hover {
   background: #f5f7f9;
+  transform: translateY(-1px);
 }
 .btn.accent {
-  background: var(--srb-blue);
+  background: linear-gradient(135deg, var(--srb-blue) 0%, #135f8b 100%);
   color: #fff;
   border-color: var(--srb-blue);
 }
 .btn.accent:hover {
-  background: var(--srb-blue-dark);
+  background: linear-gradient(135deg, var(--srb-blue-dark) 0%, #0f3d5c 100%);
 }
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
 .search-box {
   position: relative;
 }
 .search-box input {
-  width: 230px;
-  height: 34px;
+  width: 250px;
+  height: 38px;
   border: 1px solid var(--border);
-  border-radius: 7px;
-  padding: 0 12px 0 32px;
+  border-radius: 999px;
+  padding: 0 12px 0 36px;
   font-size: 12.5px;
   background: #fff;
+  box-shadow: var(--shadow);
 }
 .search-box i {
   position: absolute;
-  left: 10px;
-  top: 9px;
+  left: 12px;
+  top: 11px;
   color: var(--text-soft);
   font-size: 15px;
 }
@@ -156,8 +165,9 @@ body {
 .kpi-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 16px;
   padding: 14px 16px;
+  box-shadow: var(--shadow);
 }
 .kpi-card .lbl {
   font-size: 12px;
@@ -205,8 +215,9 @@ body {
 .card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 16px;
   padding: 16px;
+  box-shadow: var(--shadow);
 }
 .card h3 {
   font-size: 13.5px;
@@ -227,15 +238,16 @@ table {
 th {
   text-align: left;
   color: var(--text-mut);
-  font-weight: 500;
-  font-size: 11.5px;
+  font-weight: 600;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
-  padding: 8px 10px;
+  letter-spacing: 0.08em;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--border);
+  background: #f8fafc;
 }
 td {
-  padding: 10px 10px;
+  padding: 11px 12px;
   border-bottom: 1px solid var(--border);
   color: var(--text);
 }
@@ -243,7 +255,7 @@ tr:last-child td {
   border-bottom: none;
 }
 tr:hover td {
-  background: #fafbfc;
+  background: #fafcff;
 }
 
 .agent-cell {
@@ -279,12 +291,13 @@ tr:hover td {
   flex-wrap: wrap;
 }
 .filters select {
-  height: 34px;
+  height: 38px;
   border: 1px solid var(--border);
-  border-radius: 7px;
-  padding: 0 10px;
+  border-radius: 999px;
+  padding: 0 12px;
   font-size: 12.5px;
   background: #fff;
+  box-shadow: var(--shadow);
 }
 
 .tabs {
@@ -307,9 +320,9 @@ tr:hover td {
 }
 
 .icon-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
   border: 1px solid var(--border);
   background: #fff;
   display: inline-flex;
@@ -317,9 +330,12 @@ tr:hover td {
   justify-content: center;
   cursor: pointer;
   color: var(--text-mut);
+  box-shadow: 0 6px 16px rgba(15, 61, 92, 0.06);
+  transition: transform 0.16s ease, background 0.16s ease;
 }
 .icon-btn:hover {
   background: #f5f7f9;
+  transform: translateY(-1px);
 }
 
 .report-card {
@@ -416,19 +432,21 @@ tr:hover td {
   margin-top: 12px;
   font-size: 12px;
   color: var(--text-mut);
+  padding: 6px 4px 0;
 }
 .pagination .pages {
   display: flex;
   gap: 4px;
 }
 .pagination button {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   border: 1px solid var(--border);
   background: #fff;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 11.5px;
   cursor: pointer;
+  box-shadow: 0 6px 16px rgba(15, 61, 92, 0.06);
 }
 .pagination button.on {
   background: var(--srb-blue);
