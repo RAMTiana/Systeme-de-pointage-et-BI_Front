@@ -2,7 +2,7 @@
   <h2>Tableau de bord</h2>
   <div class="actions">
     <select [(ngModel)]="idServiceSelectionne" (ngModelChange)="surChangementService()">
-      <option [ngValue]="null">Tous les services</option>
+      <option [ngValue]="null">Tous les divisions</option>
       @for (service of services(); track service.id_service) {
         <option [ngValue]="service.id_service">{{ service.nom_service }}</option>
       }
@@ -65,7 +65,7 @@
       <div style="height: 200px"><canvas #canvasTendance></canvas></div>
     </div>
     <div class="card">
-      <h3>Comparaison entre services</h3>
+      <h3>Comparaison entre divisions</h3>
       <p class="sub">Taux de présence, période en cours</p>
       <div style="height: 200px"><canvas #canvasServices></canvas></div>
     </div>
@@ -79,7 +79,7 @@
         <table>
           <tr>
             <th>Agent</th>
-            <th>Service</th>
+            <th>Divisions</th>
             <th style="text-align: right">Retards</th>
           </tr>
           @for (agent of classement(); track agent.id_agent) {

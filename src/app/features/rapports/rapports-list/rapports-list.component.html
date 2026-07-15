@@ -17,9 +17,9 @@
         </select>
       </div>
       <div class="field" style="min-width: 180px; margin-bottom: 0">
-        <label>Service</label>
+        <label>Divisions</label>
         <select [(ngModel)]="idServiceGeneration">
-          <option [ngValue]="null">Tous services (consolidé)</option>
+          <option [ngValue]="null">Tous divisions (consolidé)</option>
           @for (service of services(); track service.id_service) {
             <option [ngValue]="service.id_service">{{ service.nom_service }}</option>
           }
