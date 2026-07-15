@@ -1,0 +1,68 @@
+<div class="topbar">
+  <h2>Paramètres système</h2>
+</div>
+
+@if (erreur()) {
+  <div class="card" style="border-color: var(--srb-coral); margin-bottom: 16px">
+    <p style="color: var(--srb-coral); margin: 0">{{ erreur() }}</p>
+  </div>
+}
+
+<div class="card">
+  <h3>Seuils et règles métier</h3>
+  <p class="sub">
+    {{ peutModifier ? 'Personnalisation par l’administrateur' : 'Lecture seule — réservé aux administrateurs pour la modification' }}
+  </p>
+
+  @if (enChargement()) {
+    <p class="empty-hint">Chargement des paramètres…</p>
+  } @else if (!parametres().length) {
+    <p class="empty-hint">Aucun paramètre configuré.</p>
+  } @else {
+    <table>
+      <tr>
+        <th>Paramètre</th>
+        <th>Valeur</th>
+        <th>Description</th>
+        @if (peutModifier) {
+          <th></th>
+        }
+      </tr>
+      @for (parametre of parametres(); track parametre.id_parametre) {
+        <tr>
+          <td class="name">{{ parametre.nom_parametre }}</td>
+          @if (idEnEdition() === parametre.id_parametre) {
+            <td>
+              <input type="text" style="width: 140px" [(ngModel)]="valeurEnEdition" />
+            </td>
+          } @else {
+            <td>{{ parametre.valeur || 'non renseigné' }}</td>
+          }
+          <td class="muted">{{ parametre.description || '—' }}</td>
+          @if (peutModifier) {
+            <td style="white-space: nowrap">
+              @if (idEnEdition() === parametre.id_parametre) {
+                <i
+                  class="ti ti-check icon-btn"
+                  title="Enregistrer"
+                  [class.muted]="enregistrementEnCours()"
+                  (click)="enregistrer(parametre)"
+                ></i>
+                <i class="ti ti-x icon-btn" title="Annuler" (click)="annulerEdition()"></i>
+              } @else {
+                <i class="ti ti-pencil icon-btn" title="Modifier" (click)="ouvrirEdition(parametre)"></i>
+              }
+            </td>
+          }
+        </tr>
+        @if (idEnEdition() === parametre.id_parametre && erreurEdition()) {
+          <tr>
+            <td [attr.colspan]="peutModifier ? 4 : 3">
+              <p style="color: var(--srb-coral); font-size: 12.5px; margin: 4px 0">{{ erreurEdition() }}</p>
+            </td>
+          </tr>
+        }
+      }
+    </table>
+  }
+</div>
