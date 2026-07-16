@@ -1,5 +1,7 @@
 <div class="shell">
-  <div class="sidebar">
+  <div class="sidebar-backdrop" [class.open]="menuOuvert" (click)="fermerMenu()"></div>
+
+  <aside class="sidebar" [class.open]="menuOuvert">
     <div class="brand">
       <div class="mark">SRB</div>
       <div class="txt">SRB Haute<br />Matsiatra<span>Pointage &amp; BI</span></div>
@@ -9,7 +11,7 @@
       <div class="nav-group-label">{{ groupe.libelle }}</div>
       @for (item of groupe.items; track item.lien) {
         @if (itemVisible(item)) {
-          <a class="nav-item" [routerLink]="item.lien" routerLinkActive="active">
+          <a class="nav-item" [routerLink]="item.lien" routerLinkActive="active" (click)="fermerMenu()">
             <i class="ti" [ngClass]="item.icone"></i> {{ item.libelle }}
           </a>
         }
@@ -26,9 +28,12 @@
     <button class="btn-deconnexion" type="button" (click)="seDeconnecter()">
       <i class="ti ti-logout"></i> Déconnexion
     </button>
-  </div>
+  </aside>
 
   <div class="main">
+    <button class="menu-toggle" type="button" (click)="basculerMenu()" aria-label="Afficher le menu">
+      <i class="ti" [class.ti-menu-2]="!menuOuvert" [class.ti-x]="menuOuvert"></i>
+    </button>
     <router-outlet></router-outlet>
   </div>
 </div>

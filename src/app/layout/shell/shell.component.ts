@@ -24,6 +24,8 @@ interface NavGroup {
   styleUrl: './shell.component.scss',
 })
 export class ShellComponent {
+  menuOuvert = false;
+
   readonly groupesNav: NavGroup[] = [
     {
       libelle: 'Pilotage',
@@ -62,6 +64,14 @@ export class ShellComponent {
 
   itemVisible(item: NavItem): boolean {
     return !item.permissionRequise || this.authService.hasPermission(item.permissionRequise);
+  }
+
+  basculerMenu(): void {
+    this.menuOuvert = !this.menuOuvert;
+  }
+
+  fermerMenu(): void {
+    this.menuOuvert = false;
   }
 
   seDeconnecter(): void {
