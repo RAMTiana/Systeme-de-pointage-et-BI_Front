@@ -52,6 +52,13 @@ export class PointageListComponent implements OnInit {
     });
   });
 
+  matriculeSaisie = '';
+  typePointageSaisie: TypePointage = 'entree';
+  modeSaisie: 'qr' | 'badge' | 'facial' = 'qr';
+  deviceKeySaisie = 'change-me-device-key';
+  readonly soumissionEnCours = signal(false);
+  readonly messagePointage = signal<string | null>(null);
+
   get nombreDePages(): number {
     return Math.max(1, Math.ceil(this.total() / LIMITE_PAR_PAGE));
   }
@@ -115,6 +122,32 @@ export class PointageListComponent implements OnInit {
 
   fermerDetail(): void {
     this.pointageSelectionne.set(null);
+  }
+
+  pointer(): void {
+    const matricule = this.matriculeSaisie.trim();
+    if (!matricule) {
+      this.messagePointage.set('Le matricule est requis.');
+      return;
+    }
+
+    this.soumissionEnCours.set(true);
+    this.messagePointage.set(null);
+
+    this.pointageService
+      .pointer(this.modeSaisie, { matricule, type_pointage: this.typePointageSaisie }, this.deviceKeySaisie)
+      .pipe(finalize(() => this.soumissionEnCours.set(false)))
+      .subscribe({
+        next: () => {
+          this.messagePointage.set(`Pointage ${this.typePointageSaisie === 'entree' ? 'd’entrée' : 'de sortie'} enregistré.`);
+          this.matriculeSaisie = '';
+          this.charger();
+        },
+        error: (error) => {
+          const detail = error?.error?.detail ?? 'Le pointage n’a pas pu être enregistré.';
+          this.messagePointage.set(detail);
+        },
+      });
   }
 
   initiales(pointage: PointageOut): string {

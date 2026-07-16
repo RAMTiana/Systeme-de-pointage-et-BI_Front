@@ -1,10 +1,15 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { Page } from '../models/agent.model';
 import { PointageOut, StatutPointage, TypePointage } from '../models/pointage.model';
+
+interface PointageResponse {
+  pointage: PointageOut;
+  anomalie_detectee?: string | null;
+}
 
 // Note : l'API /pointage ne propose pas de filtre par mode de pointage ni de recherche
 // texte par agent (cf. app/api/v1/pointage.py côté back). Ces deux critères sont donc
@@ -42,5 +47,10 @@ export class PointageService {
 
   obtenir(idPointage: number): Observable<PointageOut> {
     return this.http.get<PointageOut>(`${this.base}/${idPointage}`);
+  }
+
+  pointer(mode: 'qr' | 'badge' | 'facial', payload: Record<string, unknown>, deviceKey: string): Observable<PointageResponse> {
+    const headers = new HttpHeaders({ 'X-Device-Key': deviceKey });
+    return this.http.post<PointageResponse>(`${this.base}/${mode}`, payload, { headers });
   }
 }

@@ -32,6 +32,43 @@
   </div>
 </div>
 
+<div class="card" style="margin-bottom: 16px; padding: 16px">
+  <h3 style="margin: 0 0 10px">Nouveau pointage</h3>
+  <div class="row-2" style="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: end">
+    <div class="field">
+      <label>Matricule</label>
+      <input [(ngModel)]="matriculeSaisie" />
+    </div>
+    <div class="field">
+      <label>Type</label>
+      <select [(ngModel)]="typePointageSaisie">
+        <option [ngValue]="'entree'">Entrée</option>
+        <option [ngValue]="'sortie'">Sortie</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Mode</label>
+      <select [(ngModel)]="modeSaisie">
+        <option [ngValue]="'qr'">QR</option>
+        <option [ngValue]="'badge'">Badge</option>
+        <option [ngValue]="'facial'">Facial</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Clé de dispositif</label>
+      <input [(ngModel)]="deviceKeySaisie" />
+    </div>
+  </div>
+  <div class="modal-actions" style="margin-top: 12px">
+    <button class="btn accent" (click)="pointer()" [disabled]="soumissionEnCours()">
+      <i class="ti ti-clock"></i> {{ soumissionEnCours() ? 'Envoi…' : 'Enregistrer le pointage' }}
+    </button>
+  </div>
+  @if (messagePointage()) {
+    <p class="sub" style="margin-top: 10px; color: var(--srb-teal)">{{ messagePointage() }}</p>
+  }
+</div>
+
 <div class="filters">
   <select [(ngModel)]="idServiceFiltre" (ngModelChange)="surChangementFiltreServeur()">
     <option [ngValue]="null">Tous les services</option>
