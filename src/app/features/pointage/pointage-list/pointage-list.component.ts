@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 
@@ -22,8 +23,12 @@ type OngletPointage = 'historique' | 'scan';
 export class PointageListComponent implements OnInit {
   private readonly pointageService = inject(PointageService);
   private readonly serviceReferentiel = inject(ServiceReferentielService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly ongletActif = signal<OngletPointage>('historique');
+
+  // Horodatage du dernier pointage détecté automatiquement (affiché dans l'historique).
+  readonly derniereMiseAJour = signal<Date | null>(null);
 
   readonly pointages = signal<PointageOut[]>([]);
   readonly total = signal(0);
@@ -57,13 +62,6 @@ export class PointageListComponent implements OnInit {
     });
   });
 
-  matriculeSaisie = '';
-  typePointageSaisie: TypePointage = 'entree';
-  modeSaisie: 'qr' | 'badge' | 'facial' = 'qr';
-  deviceKeySaisie = 'change-me-device-key';
-  readonly soumissionEnCours = signal(false);
-  readonly messagePointage = signal<string | null>(null);
-
   get nombreDePages(): number {
     return Math.max(1, Math.ceil(this.total() / LIMITE_PAR_PAGE));
   }
@@ -75,14 +73,19 @@ export class PointageListComponent implements OnInit {
   ngOnInit(): void {
     this.serviceReferentiel.lister().subscribe({ next: (s) => this.services.set(s), error: () => undefined });
     this.charger();
+
+    // Cœur de l'automatisation : dès qu'un pointage est enregistré, où que ce soit
+    // (poste de scan QR / facial / WebAuthn, ou saisie manuelle ci-dessous), l'historique
+    // se recharge tout seul, sans aucune action de l'utilisateur.
+    this.pointageService.pointageEffectue$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.skip.set(0);
+      this.charger();
+      this.derniereMiseAJour.set(new Date());
+    });
   }
 
   basculerOnglet(onglet: OngletPointage): void {
     this.ongletActif.set(onglet);
-    // On rafraîchit l'historique en revenant dessus, pour voir les pointages faits depuis le poste de scan.
-    if (onglet === 'historique') {
-      this.charger();
-    }
   }
 
   surChangementFiltreServeur(): void {
@@ -135,32 +138,6 @@ export class PointageListComponent implements OnInit {
 
   fermerDetail(): void {
     this.pointageSelectionne.set(null);
-  }
-
-  pointer(): void {
-    const matricule = this.matriculeSaisie.trim();
-    if (!matricule) {
-      this.messagePointage.set('Le matricule est requis.');
-      return;
-    }
-
-    this.soumissionEnCours.set(true);
-    this.messagePointage.set(null);
-
-    this.pointageService
-      .pointer(this.modeSaisie, { matricule, type_pointage: this.typePointageSaisie }, this.deviceKeySaisie)
-      .pipe(finalize(() => this.soumissionEnCours.set(false)))
-      .subscribe({
-        next: () => {
-          this.messagePointage.set(`Pointage ${this.typePointageSaisie === 'entree' ? 'd’entrée' : 'de sortie'} enregistré.`);
-          this.matriculeSaisie = '';
-          this.charger();
-        },
-        error: (error) => {
-          const detail = error?.error?.detail ?? 'Le pointage n’a pas pu être enregistré.';
-          this.messagePointage.set(detail);
-        },
-      });
   }
 
   initiales(pointage: PointageOut): string {

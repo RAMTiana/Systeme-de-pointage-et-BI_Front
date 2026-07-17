@@ -3,6 +3,7 @@ import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject, sig
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 
+import { environment } from '../../../../environments/environment';
 import { PointageService } from '../../../core/services/pointage.service';
 import { TypePointage } from '../../../core/models/pointage.model';
 
@@ -27,7 +28,7 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
 
   readonly mode = signal<Mode>('qr');
   readonly typePointage = signal<TypePointage>('entree');
-  readonly deviceKey = signal<string>('change-me-device-key');
+  readonly deviceKey = signal<string>(environment.deviceApiKey);
   readonly matricule = signal<string>('');
 
   readonly message = signal<string | null>(null);

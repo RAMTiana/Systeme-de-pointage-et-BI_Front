@@ -10,4 +10,7 @@ export const environment = {
   // JavaScript origins", ajouter le domaine HTTPS réel du frontend en prod
   // (ex: https://srb.hautematsiatra.mg), sinon Google refusera l'affichage du bouton.
   googleClientId: '689643947131-iucmm8a59hg4jki1e56bov5hg1uk9t76.apps.googleusercontent.com',
+  // Clé partagée envoyée en en-tête X-Device-Key par le poste de scan (cf. environment.ts).
+  // À CHANGER en prod pour une vraie valeur secrète, identique au DEVICE_API_KEY du backend.
+  deviceApiKey: 'change-me-device-key',
 };

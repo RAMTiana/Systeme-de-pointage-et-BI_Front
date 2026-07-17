@@ -1,12 +1,12 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, Subject, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { Page } from '../models/agent.model';
 import { PointageOut, StatutPointage, TypePointage } from '../models/pointage.model';
 
-interface PointageResponse {
+export interface PointageResponse {
   pointage: PointageOut;
   anomalie_detectee?: string | null;
 }
@@ -28,6 +28,13 @@ export interface FiltresPointages {
 @Injectable({ providedIn: 'root' })
 export class PointageService {
   private readonly base = `${environment.apiUrl}/pointage`;
+
+  /**
+   * Émet à chaque pointage enregistré avec succès, quelle que soit sa source
+   * (poste de scan QR/facial/WebAuthn ou saisie manuelle). L'historique s'y
+   * abonne pour se mettre à jour automatiquement, sans action de l'utilisateur.
+   */
+  readonly pointageEffectue$ = new Subject<PointageResponse>();
 
   constructor(private readonly http: HttpClient) {}
 
@@ -51,6 +58,8 @@ export class PointageService {
 
   pointer(mode: 'qr' | 'badge' | 'facial', payload: Record<string, unknown>, deviceKey: string): Observable<PointageResponse> {
     const headers = new HttpHeaders({ 'X-Device-Key': deviceKey });
-    return this.http.post<PointageResponse>(`${this.base}/${mode}`, payload, { headers });
+    return this.http
+      .post<PointageResponse>(`${this.base}/${mode}`, payload, { headers })
+      .pipe(tap((reponse) => this.pointageEffectue$.next(reponse)));
   }
 }
