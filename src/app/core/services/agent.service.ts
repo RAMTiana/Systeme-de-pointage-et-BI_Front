@@ -10,6 +10,8 @@ import {
   AgentDetailOut,
   AgentOut,
   AgentUpdate,
+  EmpreinteFacialeOut,
+  IdentifiantWebAuthnOut,
   Page,
   StatutAgent,
 } from '../models/agent.model';
@@ -75,5 +77,38 @@ export class AgentService {
 
   terminerAffectation(idAgent: number, idAffectation: number): Observable<AffectationOut> {
     return this.http.delete<AffectationOut>(`${this.base}/${idAgent}/affectations/${idAffectation}`);
+  }
+
+  // ------------------------------------------------------------------
+  // Empreinte biométrique faciale (prérequis au pointage mode 'facial')
+  // ------------------------------------------------------------------
+
+  enregistrerEmpreinteFaciale(idAgent: number, encodageFacial: number[]): Observable<EmpreinteFacialeOut> {
+    return this.http.put<EmpreinteFacialeOut>(`${this.base}/${idAgent}/empreinte-faciale`, {
+      encodage_facial: encodageFacial,
+    });
+  }
+
+  supprimerEmpreinteFaciale(idAgent: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${idAgent}/empreinte-faciale`);
+  }
+
+  // ------------------------------------------------------------------
+  // Biométrie d'appareil WebAuthn (prérequis au pointage mode 'webauthn')
+  // ------------------------------------------------------------------
+
+  obtenirOptionsWebauthn(idAgent: number): Observable<any> {
+    return this.http.get<any>(`${this.base}/${idAgent}/webauthn/options`);
+  }
+
+  enregistrerWebauthn(idAgent: number, credential: unknown, nomAppareil?: string | null): Observable<IdentifiantWebAuthnOut> {
+    return this.http.put<IdentifiantWebAuthnOut>(`${this.base}/${idAgent}/webauthn`, {
+      credential,
+      nom_appareil: nomAppareil || null,
+    });
+  }
+
+  supprimerWebauthn(idAgent: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${idAgent}/webauthn`);
   }
 }

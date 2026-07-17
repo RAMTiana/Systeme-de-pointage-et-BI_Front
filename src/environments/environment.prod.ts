@@ -13,4 +13,8 @@ export const environment = {
   // Clé partagée envoyée en en-tête X-Device-Key par le poste de scan (cf. environment.ts).
   // À CHANGER en prod pour une vraie valeur secrète, identique au DEVICE_API_KEY du backend.
   deviceApiKey: 'change-me-device-key',
+  // cf. commentaire dans environment.ts — à héberger soi-même en production
+  // si une politique de confidentialité stricte l'exige (aucune dépendance
+  // à un CDN externe pour les données biométriques).
+  faceApiModelsUrl: 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights',
 };

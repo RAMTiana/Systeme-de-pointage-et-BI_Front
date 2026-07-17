@@ -9,4 +9,12 @@ export const environment = {
   // Doit correspondre à DEVICE_API_KEY dans le .env du backend. Ce n'est PAS un
   // identifiant utilisateur : il n'a donc pas besoin d'être saisi à l'écran.
   deviceApiKey: 'change-me-device-key',
+  // Dossier contenant les poids des modèles face-api.js (tiny_face_detector,
+  // face_landmark_68, face_recognition) utilisés pour calculer l'empreinte
+  // faciale (vecteur 128 dimensions) directement dans le navigateur — jamais
+  // l'image du visage n'est envoyée au serveur pour l'enrôlement.
+  // Par défaut : CDN public du dépôt face-api.js. Pour un déploiement hors
+  // ligne / RGPD strict, copier le dossier `weights` dans `public/models`
+  // et pointer cette URL vers `/models`.
+  faceApiModelsUrl: 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights',
 };

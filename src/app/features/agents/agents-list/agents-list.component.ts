@@ -9,12 +9,13 @@ import { AgentService } from '../../../core/services/agent.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ServiceReferentielService } from '../../../core/services/service-referentiel.service';
 import { AgentFormModalComponent } from '../agent-form-modal/agent-form-modal.component';
+import { AgentBiometrieModalComponent } from '../agent-biometrie-modal/agent-biometrie-modal.component';
 
 const LIMITE_PAR_PAGE = 20;
 
 @Component({
     selector: 'app-agents-list',
-    imports: [CommonModule, FormsModule, AgentFormModalComponent],
+    imports: [CommonModule, FormsModule, AgentFormModalComponent, AgentBiometrieModalComponent],
     templateUrl: './agents-list.component.html'
 })
 export class AgentsListComponent implements OnInit, OnDestroy {
@@ -38,6 +39,9 @@ export class AgentsListComponent implements OnInit, OnDestroy {
   readonly agentEnEdition = signal<AgentOut | null>(null);
   readonly enregistrementEnCours = signal(false);
   readonly erreurModale = signal<string | null>(null);
+
+  /** Agent en cours d'enrôlement biométrique (QR / facial / WebAuthn), ou null si la modale est fermée. */
+  readonly agentPourBiometrie = signal<AgentOut | null>(null);
 
   private readonly rechercheSubject = new Subject<string>();
 
@@ -132,6 +136,7 @@ export class AgentsListComponent implements OnInit, OnDestroy {
 
   enregistrerAgent(payload: AgentCreate | AgentUpdate): void {
     const agentEdite = this.agentEnEdition();
+    const estCreation = !agentEdite;
     this.enregistrementEnCours.set(true);
     this.erreurModale.set(null);
 
@@ -140,9 +145,14 @@ export class AgentsListComponent implements OnInit, OnDestroy {
       : this.agentService.creer(payload as AgentCreate);
 
     requete.pipe(finalize(() => this.enregistrementEnCours.set(false))).subscribe({
-      next: () => {
+      next: (agent) => {
         this.modaleOuverte.set(false);
         this.charger();
+        if (estCreation) {
+          // Enchaîne directement sur l'enrôlement biométrique (QR / facial / WebAuthn)
+          // pour que le pointage fonctionne dès que l'agent est créé.
+          this.agentPourBiometrie.set(agent);
+        }
       },
       error: (err) =>
         this.erreurModale.set(
@@ -151,6 +161,18 @@ export class AgentsListComponent implements OnInit, OnDestroy {
             : "Impossible d'enregistrer l'agent. Vérifiez les champs saisis."
         ),
     });
+  }
+
+  ouvrirBiometrie(agent: AgentOut): void {
+    this.agentPourBiometrie.set(agent);
+  }
+
+  fermerBiometrie(): void {
+    this.agentPourBiometrie.set(null);
+  }
+
+  surAgentMisAJourBiometrie(agent: AgentOut): void {
+    this.remplacerAgent(agent);
   }
 
   changerStatut(agent: AgentOut): void {

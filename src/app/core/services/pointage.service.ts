@@ -56,10 +56,21 @@ export class PointageService {
     return this.http.get<PointageOut>(`${this.base}/${idPointage}`);
   }
 
-  pointer(mode: 'qr' | 'badge' | 'facial', payload: Record<string, unknown>, deviceKey: string): Observable<PointageResponse> {
+  pointer(mode: 'qr' | 'badge' | 'facial' | 'webauthn', payload: Record<string, unknown>, deviceKey: string): Observable<PointageResponse> {
     const headers = new HttpHeaders({ 'X-Device-Key': deviceKey });
     return this.http
       .post<PointageResponse>(`${this.base}/${mode}`, payload, { headers })
       .pipe(tap((reponse) => this.pointageEffectue$.next(reponse)));
+  }
+
+  /**
+   * Récupère le challenge d'authentification WebAuthn (émis et conservé côté serveur,
+   * cf. app/services/webauthn_service.py:options_pointage) — préalable obligatoire à
+   * navigator.credentials.get(), sans quoi POST /pointage/webauthn échoue (challenge introuvable).
+   */
+  optionsWebauthn(matricule: string, deviceKey: string): Observable<any> {
+    const headers = new HttpHeaders({ 'X-Device-Key': deviceKey });
+    const params = new HttpParams().set('matricule', matricule);
+    return this.http.get<any>(`${this.base}/webauthn/options`, { headers, params });
   }
 }

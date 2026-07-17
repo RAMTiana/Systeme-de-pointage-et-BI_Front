@@ -1,0 +1,141 @@
+<div class="modal-overlay" (click)="fermerModale()">
+  <div class="modal large" (click)="$event.stopPropagation()">
+    <h3><i class="ti ti-fingerprint"></i> Biométrie — {{ agent.prenom }} {{ agent.nom }}</h3>
+    <p class="sub">{{ agent.matricule }} — configurez les moyens d'identification utilisés au pointage.</p>
+
+    <div class="tabs">
+      <div class="tab" [class.active]="onglet() === 'qr'" (click)="changerOnglet('qr')">
+        <i class="ti ti-qrcode"></i> QR code
+      </div>
+      <div class="tab" [class.active]="onglet() === 'facial'" (click)="changerOnglet('facial')">
+        <i class="ti ti-face-id"></i> Reconnaissance faciale
+        @if (agent.empreinte_faciale_enregistree) {
+          <i class="ti ti-circle-check-filled tab-ok"></i>
+        }
+      </div>
+      <div class="tab" [class.active]="onglet() === 'webauthn'" (click)="changerOnglet('webauthn')">
+        <i class="ti ti-shield-lock"></i> Biométrie appareil
+        @if (agent.webauthn_enregistre) {
+          <i class="ti ti-circle-check-filled tab-ok"></i>
+        }
+      </div>
+    </div>
+
+    <!-- ===================== QR CODE ===================== -->
+    @if (onglet() === 'qr') {
+      <div class="onglet-contenu qr-onglet">
+        <p class="sub">
+          Ce QR code encode le matricule de l'agent : il suffit de l'imprimer et de le présenter devant la caméra
+          du poste de pointage.
+        </p>
+        <div class="qr-wrap">
+          <canvas #canvasQr></canvas>
+        </div>
+        <div class="modal-actions" style="justify-content: center">
+          <button type="button" class="btn" (click)="telechargerQr()"><i class="ti ti-download"></i> Télécharger</button>
+          <button type="button" class="btn accent" (click)="imprimerQr()"><i class="ti ti-printer"></i> Imprimer le badge</button>
+        </div>
+      </div>
+    }
+
+    <!-- ===================== FACIAL ===================== -->
+    @if (onglet() === 'facial') {
+      <div class="onglet-contenu">
+        @if (!agent.consentement_facial) {
+          <p class="sub">
+            Le consentement explicite de l'agent est requis avant tout enregistrement d'une empreinte faciale
+            (cf. cahier des charges — Sécurité et RGPD).
+          </p>
+          <button type="button" class="btn accent" [disabled]="consentementEnCours()" (click)="donnerConsentement()">
+            <i class="ti ti-check"></i> {{ consentementEnCours() ? 'Enregistrement…' : "Enregistrer le consentement de l'agent" }}
+          </button>
+        } @else {
+          @if (agent.empreinte_faciale_enregistree) {
+            <p class="sub"><i class="ti ti-circle-check-filled tab-ok"></i> Une empreinte faciale est déjà enregistrée pour cet agent.</p>
+          }
+
+          @if (chargementModeles()) {
+            <p class="empty-hint"><i class="ti ti-loader-2"></i> Chargement des modèles de reconnaissance faciale…</p>
+          }
+
+          <div class="video-wrap">
+            <video #videoFace playsinline muted></video>
+            <canvas #canvasOverlay class="overlay"></canvas>
+          </div>
+          <canvas #canvasFace hidden></canvas>
+
+          @if (cameraActive() && !visageDetecte()) {
+            <p class="empty-hint"><i class="ti ti-face-id-error" style="color: var(--srb-coral)"></i> Aucun visage détecté — cadrez-le au centre.</p>
+          }
+
+          <button
+            type="button"
+            class="btn accent"
+            [disabled]="!modelesPrets() || !cameraActive() || !visageDetecte() || enCoursFacial()"
+            (click)="capturerEtEnregistrer()"
+          >
+            <i class="ti ti-camera"></i> {{ enCoursFacial() ? 'Enregistrement…' : "Capturer et enregistrer l'empreinte" }}
+          </button>
+
+          @if (agent.empreinte_faciale_enregistree) {
+            <button type="button" class="btn" style="margin-left: 8px" (click)="supprimerEmpreinte()">
+              <i class="ti ti-trash"></i> Supprimer l'empreinte
+            </button>
+          }
+        }
+
+        @if (messageFacial()) {
+          <p class="msg-ok"><i class="ti ti-check"></i> {{ messageFacial() }}</p>
+        }
+        @if (erreurFacial()) {
+          <p class="message-erreur">{{ erreurFacial() }}</p>
+        }
+      </div>
+    }
+
+    <!-- ===================== WEBAUTHN ===================== -->
+    @if (onglet() === 'webauthn') {
+      <div class="onglet-contenu">
+        <p class="sub">
+          Enrôle l'empreinte digitale / Face ID / Windows Hello de l'appareil utilisé pour pointer (Touch ID,
+          empreinte de téléphone…). La donnée biométrique reste sur l'appareil : seule une clé publique est
+          transmise et enregistrée.
+        </p>
+
+        @if (!webauthnSupporte()) {
+          <p class="empty-hint"><i class="ti ti-alert-triangle"></i> WebAuthn n'est pas disponible sur ce navigateur/appareil.</p>
+        } @else {
+          @if (agent.webauthn_enregistre) {
+            <p class="sub"><i class="ti ti-circle-check-filled tab-ok"></i> Un identifiant biométrique est déjà enregistré pour cet agent.</p>
+          }
+
+          <div class="field">
+            <label>Nom de l'appareil (optionnel)</label>
+            <input [(ngModel)]="nomAppareil" placeholder="ex : Téléphone du poste 1" />
+          </div>
+
+          <button type="button" class="btn accent" [disabled]="enCoursWebauthn()" (click)="enrolerWebauthn()">
+            <i class="ti ti-fingerprint"></i> {{ enCoursWebauthn() ? 'Enrôlement…' : (agent.webauthn_enregistre ? 'Ré-enrôler cet appareil' : 'Enrôler cet appareil') }}
+          </button>
+
+          @if (agent.webauthn_enregistre) {
+            <button type="button" class="btn" style="margin-left: 8px" (click)="supprimerWebauthn()">
+              <i class="ti ti-trash"></i> Supprimer l'identifiant
+            </button>
+          }
+        }
+
+        @if (messageWebauthn()) {
+          <p class="msg-ok"><i class="ti ti-check"></i> {{ messageWebauthn() }}</p>
+        }
+        @if (erreurWebauthn()) {
+          <p class="message-erreur">{{ erreurWebauthn() }}</p>
+        }
+      </div>
+    }
+
+    <div class="modal-actions">
+      <button type="button" class="btn" (click)="fermerModale()">Fermer</button>
+    </div>
+  </div>
+</div>

@@ -45,6 +45,7 @@
         <th>Service</th>
         <th>Statut</th>
         <th>Consent. facial</th>
+        <th>Biométrie</th>
         @if (peutGerer) {
           <th></th>
         }
@@ -68,9 +69,23 @@
               {{ agent.consentement_facial ? 'Oui' : 'Non' }}
             </span>
           </td>
+          <td class="muted" style="white-space: nowrap">
+            <i
+              class="ti ti-face-id"
+              [style.color]="agent.empreinte_faciale_enregistree ? 'var(--srb-teal)' : 'var(--text-mut)'"
+              title="Reconnaissance faciale"
+            ></i>
+            <i
+              class="ti ti-fingerprint"
+              [style.color]="agent.webauthn_enregistre ? 'var(--srb-teal)' : 'var(--text-mut)'"
+              title="Biométrie appareil"
+              style="margin-left: 6px"
+            ></i>
+          </td>
           @if (peutGerer) {
             <td style="white-space: nowrap">
               <i class="ti ti-pencil icon-btn" title="Modifier" (click)="ouvrirEdition(agent)"></i>
+              <i class="ti ti-fingerprint icon-btn" title="Biométrie (QR / facial / appareil)" (click)="ouvrirBiometrie(agent)"></i>
               <i
                 class="ti icon-btn"
                 [class.ti-player-pause]="agent.statut === 'actif'"
@@ -112,4 +127,12 @@
     (fermer)="fermerModale()"
     (enregistrer)="enregistrerAgent($event)"
   ></app-agent-form-modal>
+}
+
+@if (agentPourBiometrie(); as agentBio) {
+  <app-agent-biometrie-modal
+    [agent]="agentBio"
+    (fermer)="fermerBiometrie()"
+    (agentMisAJour)="surAgentMisAJourBiometrie($event)"
+  ></app-agent-biometrie-modal>
 }

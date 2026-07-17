@@ -36,8 +36,10 @@
         <video #videoQr playsinline muted></video>
         <div class="reticle"></div>
       </div>
-      @if (!qrSupporte()) {
-        <p class="empty-hint">BarcodeDetector non disponible — installez <code>&#64;zxing/browser</code> et remplacez le scanner.</p>
+      @if (qrModeCompatibilite()) {
+        <p class="empty-hint">
+          <i class="ti ti-info-circle"></i> Mode compatibilité actif (ZXing) — votre navigateur n'a pas de lecteur QR natif, mais le scan fonctionne normalement.
+        </p>
       }
     }
 
