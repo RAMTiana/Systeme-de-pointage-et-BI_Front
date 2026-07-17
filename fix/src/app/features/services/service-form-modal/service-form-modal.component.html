@@ -1,0 +1,31 @@
+<div class="modal-overlay" (click)="fermer.emit()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>{{ service ? 'Modifier la division' : 'Nouvelle division' }}</h3>
+    <p class="sub">{{ service ? (service.nombre_agents + ' agent(s) rattaché(s)') : 'Unité organisationnelle du SRB' }}</p>
+
+    <form [formGroup]="formulaire" (ngSubmit)="soumettre()">
+      <div class="field">
+        <label for="nomService">Nom de la division</label>
+        <input id="nomService" type="text" formControlName="nom_service" placeholder="Ex. Centre Informatique Régional" />
+        @if (formulaire.controls.nom_service.invalid && formulaire.controls.nom_service.touched) {
+          <div class="erreur-champ">Le nom de la division est obligatoire.</div>
+        }
+      </div>
+      <div class="field">
+        <label for="descriptionService">Description</label>
+        <textarea id="descriptionService" formControlName="description" placeholder="Rôle et missions de la division"></textarea>
+      </div>
+
+      @if (erreur) {
+        <p class="message-erreur">{{ erreur }}</p>
+      }
+
+      <div class="modal-actions">
+        <button type="button" class="btn" (click)="fermer.emit()">Annuler</button>
+        <button type="submit" class="btn accent" [disabled]="enCours">
+          <i class="ti ti-check"></i> {{ enCours ? 'Enregistrement…' : service ? 'Enregistrer' : 'Créer' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

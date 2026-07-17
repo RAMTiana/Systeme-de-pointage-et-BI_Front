@@ -1,29 +1,13 @@
 <div class="topbar">
   <h2>Pointage</h2>
-  @if (ongletActif() === 'historique') {
-    <div class="actions">
-      <div class="search-box">
-        <i class="ti ti-search"></i>
-        <input placeholder="Agent, matricule..." [(ngModel)]="recherche" />
-      </div>
+  <div class="actions">
+    <div class="search-box">
+      <i class="ti ti-search"></i>
+      <input placeholder="Agent, matricule..." [(ngModel)]="recherche" />
     </div>
-  }
+  </div>
 </div>
 
-<div class="page-tabs">
-  <button class="page-tab" [class.active]="ongletActif() === 'historique'" (click)="basculerOnglet('historique')">
-    <i class="ti ti-list"></i> Historique
-  </button>
-  <button class="page-tab" [class.active]="ongletActif() === 'scan'" (click)="basculerOnglet('scan')">
-    <i class="ti ti-scan"></i> Poste de scan
-  </button>
-</div>
-
-@if (ongletActif() === 'scan') {
-  <app-pointage-scan></app-pointage-scan>
-}
-
-@if (ongletActif() === 'historique') {
 <div class="row-2 pointage-stats" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 14px">
   <div class="card" style="text-align: center">
     <div class="icon-badge" style="background: #e6f1fb; color: #185fa5; margin: 0 auto 8px">
@@ -170,7 +154,6 @@
     </div>
   }
 </div>
-}
 
 @if (pointageSelectionne(); as pointage) {
   <div class="modal-overlay" (click)="fermerDetail()">

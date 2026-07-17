@@ -1,0 +1,173 @@
+<div class="topbar">
+  <h2>Utilisateurs &amp; rôles</h2>
+  @if (peutGerer) {
+    <div class="actions">
+      <button class="btn accent" (click)="ouvrirCreation()"><i class="ti ti-plus"></i> Nouveau compte</button>
+    </div>
+  }
+</div>
+
+<div class="tabs">
+  <div class="tab" [class.active]="onglet === 'comptes'" (click)="onglet = 'comptes'">Comptes</div>
+  <div class="tab" [class.active]="onglet === 'roles'" (click)="onglet = 'roles'">Rôles &amp; permissions</div>
+</div>
+
+@if (erreur()) {
+  <div class="card" style="border-color: var(--srb-coral); margin-bottom: 16px">
+    <p style="color: var(--srb-coral); margin: 0">{{ erreur() }}</p>
+  </div>
+}
+
+@if (onglet === 'comptes') {
+  <div class="filters">
+    <div class="search-box">
+      <i class="ti ti-search"></i>
+      <input placeholder="Login, e-mail, nom..." [(ngModel)]="recherche" (ngModelChange)="surSaisieRecherche()" />
+    </div>
+    <select [(ngModel)]="idRoleFiltre" (ngModelChange)="surChangementFiltre()">
+      <option [ngValue]="null">Tous les rôles</option>
+      @for (role of roles(); track role.id_role) {
+        <option [ngValue]="role.id_role">{{ role.nom_role }}</option>
+      }
+    </select>
+    <select [(ngModel)]="actifFiltre" (ngModelChange)="surChangementFiltre()">
+      <option [ngValue]="null">Tous statuts</option>
+      <option [ngValue]="true">Actif</option>
+      <option [ngValue]="false">Désactivé</option>
+    </select>
+  </div>
+
+  <div class="card" style="padding: 0">
+    @if (enChargement()) {
+      <p class="empty-hint" style="padding: 16px">Chargement des comptes…</p>
+    } @else if (!utilisateurs().length) {
+      <p class="empty-hint" style="padding: 16px">Aucun compte ne correspond à ces critères.</p>
+    } @else {
+      <table>
+        <tr>
+          <th>Utilisateur</th>
+          <th>Login</th>
+          <th>Rôle</th>
+          <th>Statut</th>
+          @if (peutGerer) {
+            <th></th>
+          }
+        </tr>
+        @for (utilisateur of utilisateurs(); track utilisateur.id_utilisateur) {
+          <tr>
+            <td class="agent-cell">
+              <div class="avatar-sm">{{ initiales(utilisateur) }}</div>
+              <span class="name">{{ utilisateur.nom_complet }}</span>
+            </td>
+            <td class="muted">{{ utilisateur.login }}</td>
+            <td>
+              @if (peutGerer && utilisateur.id_utilisateur !== idUtilisateurCourant) {
+                <select
+                  [ngModel]="utilisateur.role.id_role"
+                  (ngModelChange)="changerRole(utilisateur, $event)"
+                >
+                  @for (role of roles(); track role.id_role) {
+                    <option [ngValue]="role.id_role">{{ role.nom_role }}</option>
+                  }
+                </select>
+              } @else {
+                <span
+                  class="badge"
+                  [class.blue]="classeBadgeRole(utilisateur.role.nom_role) === 'blue'"
+                  [class.amber]="classeBadgeRole(utilisateur.role.nom_role) === 'amber'"
+                  [class.gray]="classeBadgeRole(utilisateur.role.nom_role) === 'gray'"
+                >
+                  {{ utilisateur.role.nom_role }}
+                </span>
+              }
+            </td>
+            <td>
+              <span class="badge" [class.green]="utilisateur.actif" [class.gray]="!utilisateur.actif">
+                {{ utilisateur.actif ? 'Actif' : 'Désactivé' }}
+              </span>
+            </td>
+            @if (peutGerer) {
+              <td style="white-space: nowrap">
+                <i class="ti ti-pencil icon-btn" title="Modifier" (click)="ouvrirEdition(utilisateur)"></i>
+                <i class="ti ti-key icon-btn" title="Réinitialiser le mot de passe" (click)="ouvrirReinitialisation(utilisateur)"></i>
+                @if (utilisateur.id_utilisateur !== idUtilisateurCourant) {
+                  <i
+                    class="ti icon-btn"
+                    [class.ti-lock]="utilisateur.actif"
+                    [class.ti-lock-open]="!utilisateur.actif"
+                    [title]="utilisateur.actif ? 'Désactiver' : 'Réactiver'"
+                    (click)="changerStatut(utilisateur)"
+                  ></i>
+                  <i class="ti ti-trash icon-btn" title="Supprimer" (click)="supprimer(utilisateur)"></i>
+                }
+              </td>
+            }
+          </tr>
+        }
+      </table>
+
+      <div class="pagination" style="padding: 12px 16px">
+        <span>{{ total() }} compte{{ total() > 1 ? 's' : '' }} au total</span>
+        <div class="pages">
+          <button (click)="pagePrecedente()" [disabled]="pageCourante === 1"><i class="ti ti-chevron-left"></i></button>
+          <button class="on">{{ pageCourante }} / {{ nombreDePages }}</button>
+          <button (click)="pageSuivante()" [disabled]="pageCourante === nombreDePages">
+            <i class="ti ti-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+} @else {
+  <div class="card">
+    <h3>Matrice des permissions par rôle</h3>
+    <p class="sub">RBAC — lecture seule ; la définition des permissions se fait côté back-office</p>
+    <div class="role-perm-grid">
+      @for (role of roles(); track role.id_role) {
+        <div class="role-col">
+          <h4>
+            {{ role.nom_role }}
+            <span
+              class="badge"
+              [class.blue]="classeBadgeRole(role.nom_role) === 'blue'"
+              [class.amber]="classeBadgeRole(role.nom_role) === 'amber'"
+              [class.gray]="classeBadgeRole(role.nom_role) === 'gray'"
+            >
+              {{ comptesParRole()[role.id_role] ?? '…' }} compte{{ (comptesParRole()[role.id_role] ?? 0) > 1 ? 's' : '' }}
+            </span>
+          </h4>
+          @for (permission of toutesPermissions(); track permission.id_permission) {
+            <div class="perm-line" [class.on]="aPermission(role, permission)">
+              <i class="ti" [class.ti-check]="aPermission(role, permission)" [class.ti-x]="!aPermission(role, permission)"></i>
+              {{ libellePermission(permission) }}
+            </div>
+          }
+          @if (!toutesPermissions().length) {
+            <p class="empty-hint" style="padding: 8px 0">Aucune permission définie.</p>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}
+
+@if (modaleOuverte()) {
+  <app-utilisateur-form-modal
+    [utilisateur]="utilisateurEnEdition()"
+    [roles]="roles()"
+    [enCours]="enregistrementEnCours()"
+    [erreur]="erreurModale()"
+    (fermer)="fermerModale()"
+    (enregistrer)="enregistrer($event)"
+  ></app-utilisateur-form-modal>
+}
+
+@if (utilisateurPourMotDePasse(); as utilisateur) {
+  <app-reinitialiser-mdp-modal
+    [utilisateur]="utilisateur"
+    [enCours]="reinitialisationEnCours()"
+    [erreur]="erreurReinitialisation()"
+    (fermer)="fermerReinitialisation()"
+    (confirmer)="confirmerReinitialisation($event)"
+  ></app-reinitialiser-mdp-modal>
+}

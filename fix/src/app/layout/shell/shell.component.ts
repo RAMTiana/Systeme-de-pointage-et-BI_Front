@@ -36,6 +36,7 @@ export class ShellComponent {
         { lien: '/agents', icone: 'ti-users', libelle: 'Agents' },
         { lien: '/divisions', icone: 'ti-building', libelle: 'Divisions' },
         { lien: '/pointage', icone: 'ti-clock', libelle: 'Pointage' },
+        { lien: '/pointage/scan', icone: 'ti-scan', libelle: 'Poste de scan' },
         { lien: '/anomalies', icone: 'ti-alert-triangle', libelle: 'Anomalies' },
         { lien: '/rapports', icone: 'ti-file-report', libelle: 'Rapports' },
       ],

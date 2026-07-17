@@ -7,23 +7,17 @@ import { ServiceOut } from '../../../core/models/service.model';
 import { ModePointage, PointageOut, StatutPointage, TypePointage } from '../../../core/models/pointage.model';
 import { ServiceReferentielService } from '../../../core/services/service-referentiel.service';
 import { PointageService } from '../../../core/services/pointage.service';
-import { PointageScanComponent } from '../pointage-scan/pointage-scan.component';
 
 const LIMITE_PAR_PAGE = 20;
 
-type OngletPointage = 'historique' | 'scan';
-
 @Component({
     selector: 'app-pointage-list',
-    imports: [CommonModule, FormsModule, PointageScanComponent],
-    templateUrl: './pointage-list.component.html',
-    styleUrl: './pointage-list.component.scss'
+    imports: [CommonModule, FormsModule],
+    templateUrl: './pointage-list.component.html'
 })
 export class PointageListComponent implements OnInit {
   private readonly pointageService = inject(PointageService);
   private readonly serviceReferentiel = inject(ServiceReferentielService);
-
-  readonly ongletActif = signal<OngletPointage>('historique');
 
   readonly pointages = signal<PointageOut[]>([]);
   readonly total = signal(0);
@@ -75,14 +69,6 @@ export class PointageListComponent implements OnInit {
   ngOnInit(): void {
     this.serviceReferentiel.lister().subscribe({ next: (s) => this.services.set(s), error: () => undefined });
     this.charger();
-  }
-
-  basculerOnglet(onglet: OngletPointage): void {
-    this.ongletActif.set(onglet);
-    // On rafraîchit l'historique en revenant dessus, pour voir les pointages faits depuis le poste de scan.
-    if (onglet === 'historique') {
-      this.charger();
-    }
   }
 
   surChangementFiltreServeur(): void {

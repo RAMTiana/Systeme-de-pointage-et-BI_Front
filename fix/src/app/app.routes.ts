@@ -37,10 +37,9 @@ export const routes: Routes = [
           import('./features/pointage/pointage-list/pointage-list.component').then((m) => m.PointageListComponent),
       },
       {
-        // Le poste de scan est désormais un onglet intégré à la page Pointage.
         path: 'pointage/scan',
-        redirectTo: 'pointage',
-        pathMatch: 'full',
+        loadComponent: () =>
+          import('./features/pointage/pointage-scan/pointage-scan.component').then((m) => m.PointageScanComponent),
       },
       {
         path: 'anomalies',
