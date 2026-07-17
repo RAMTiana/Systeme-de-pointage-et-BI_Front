@@ -13,10 +13,16 @@ import { AgentFormModalComponent } from '../agent-form-modal/agent-form-modal.co
 const LIMITE_PAR_PAGE = 20;
 
 @Component({
+<<<<<<< HEAD
   selector: 'app-agents-list',
   standalone: true,
   imports: [CommonModule, FormsModule, AgentFormModalComponent],
   templateUrl: './agents-list.component.html',
+=======
+    selector: 'app-agents-list',
+    imports: [CommonModule, FormsModule, AgentFormModalComponent],
+    templateUrl: './agents-list.component.html'
+>>>>>>> 022816f6 (modification de la responsivité)
 })
 export class AgentsListComponent implements OnInit, OnDestroy {
   private readonly agentService = inject(AgentService);

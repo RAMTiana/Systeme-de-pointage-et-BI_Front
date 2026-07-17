@@ -1,0 +1,90 @@
+<div class="topbar">
+  <h2>Poste de pointage</h2>
+  <div class="actions">
+    <select [ngModel]="typePointage()" (ngModelChange)="typePointage.set($event)">
+      <option [ngValue]="'entree'">Entrée</option>
+      <option [ngValue]="'sortie'">Sortie</option>
+    </select>
+    <input placeholder="Clé du dispositif" [ngModel]="deviceKey()" (ngModelChange)="deviceKey.set($event)" style="width: 200px" />
+  </div>
+</div>
+
+<div class="mode-tabs">
+  <button class="mode-tab" [class.active]="mode() === 'qr'" (click)="surChangementMode('qr')">
+    <i class="ti ti-qrcode"></i> QR code
+  </button>
+  <button class="mode-tab" [class.active]="mode() === 'facial'" (click)="surChangementMode('facial')">
+    <i class="ti ti-face-id"></i> Reconnaissance faciale
+  </button>
+  <button class="mode-tab" [class.active]="mode() === 'webauthn'" (click)="surChangementMode('webauthn')">
+    <i class="ti ti-fingerprint"></i> Biométrie appareil
+  </button>
+</div>
+
+@if (message()) {
+  <div class="card msg-ok"><i class="ti ti-check"></i> {{ message() }}</div>
+}
+@if (erreur()) {
+  <div class="card msg-err"><i class="ti ti-alert-triangle"></i> {{ erreur() }}</div>
+}
+
+<div class="scan-grid">
+  <div class="card scan-card">
+    @if (mode() === 'qr') {
+      <h3>Scanner un QR code</h3>
+      <p class="sub">Présentez le QR agent devant la caméra arrière.</p>
+      <div class="video-wrap">
+        <video #videoQr playsinline muted></video>
+        <div class="reticle"></div>
+      </div>
+      @if (!qrSupporte()) {
+        <p class="empty-hint">BarcodeDetector non disponible — installez <code>&#64;zxing/browser</code> et remplacez le scanner.</p>
+      }
+    }
+
+    @if (mode() === 'facial') {
+      <h3>Reconnaissance faciale</h3>
+      <p class="sub">Cadrez le visage et cliquez sur Capturer. Le back valide l'identité (consentement requis).</p>
+      <div class="video-wrap">
+        <video #videoFace playsinline muted></video>
+      </div>
+      <canvas #canvasFace hidden></canvas>
+      <div class="field">
+        <label>Matricule agent</label>
+        <input [ngModel]="matricule()" (ngModelChange)="matricule.set($event)" placeholder="ex : AG-0421" />
+      </div>
+      <button class="btn accent" (click)="capturerVisage()" [disabled]="enCours()">
+        <i class="ti ti-camera"></i> {{ enCours() ? 'Envoi…' : 'Capturer et pointer' }}
+      </button>
+    }
+
+    @if (mode() === 'webauthn') {
+      <h3>Biométrie de l'appareil</h3>
+      <p class="sub">Utilise Touch ID / Windows Hello / empreinte téléphone via WebAuthn.</p>
+      <div class="field">
+        <label>Matricule agent</label>
+        <input [ngModel]="matricule()" (ngModelChange)="matricule.set($event)" placeholder="ex : AG-0421" />
+      </div>
+      <button class="btn accent" (click)="pointerWebauthn()" [disabled]="enCours() || !webauthnSupporte()">
+        <i class="ti ti-fingerprint"></i>
+        {{ enCours() ? 'Envoi…' : (webauthnSupporte() ? 'Authentifier et pointer' : 'Non disponible sur cet appareil') }}
+      </button>
+      <p class="empty-hint">
+        Un lecteur d'empreinte USB matériel externe nécessite une application desktop dédiée
+        et n'est pas exposé aux navigateurs.
+      </p>
+    }
+  </div>
+
+  <div class="card info-card">
+    <h3>Mode courant</h3>
+    <p class="sub">
+      <span class="badge blue">{{ typePointage() === 'entree' ? 'Entrée' : 'Sortie' }}</span>
+    </p>
+    <ul class="tips">
+      <li><i class="ti ti-shield-check"></i> HTTPS requis pour la caméra et WebAuthn.</li>
+      <li><i class="ti ti-device-mobile"></i> Fonctionne sur téléphone, tablette et poste fixe.</li>
+      <li><i class="ti ti-lock"></i> La clé de dispositif est envoyée dans l'en-tête X-Device-Key.</li>
+    </ul>
+  </div>
+</div>

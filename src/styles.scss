@@ -256,6 +256,7 @@ textarea {
   margin: 0 0 12px;
 }
 
+<<<<<<< HEAD
 table {
   width: 100%;
   border-collapse: collapse;
@@ -265,6 +266,27 @@ table {
   -webkit-overflow-scrolling: touch;
   white-space: nowrap;
 }
+=======
+/* Container qui rend la table horizontalement scrollable sur mobile
+   tout en laissant la table remplir 100% de la largeur sur desktop. */
+.table-wrap,
+.card > table,
+.card:has(> table) {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+table {
+  width: 100%;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  table-layout: auto;
+  white-space: nowrap;
+}
+@media (min-width: 900px) {
+  table { white-space: normal; }
+}
+>>>>>>> 022816f6 (modification de la responsivité)
 th {
   text-align: left;
   color: var(--text-mut);

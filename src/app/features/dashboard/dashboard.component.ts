@@ -38,11 +38,18 @@ function formatDateCourte(iso: string): string {
 }
 
 @Component({
+<<<<<<< HEAD
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
+=======
+    selector: 'app-dashboard',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './dashboard.component.html',
+    styleUrl: './dashboard.component.scss'
+>>>>>>> 022816f6 (modification de la responsivité)
 })
 export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('canvasTendance') canvasTendance!: ElementRef<HTMLCanvasElement>;

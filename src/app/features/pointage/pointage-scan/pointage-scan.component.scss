@@ -1,0 +1,128 @@
+.mode-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.mode-tab {
+  flex: 1 1 160px;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-mut);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: var(--shadow);
+  transition: all 0.16s ease;
+}
+.mode-tab i {
+  font-size: 16px;
+}
+.mode-tab:hover {
+  background: #f5f7f9;
+  transform: translateY(-1px);
+}
+.mode-tab.active {
+  background: linear-gradient(135deg, var(--srb-blue) 0%, #135f8b 100%);
+  color: #fff;
+  border-color: var(--srb-blue);
+}
+
+.scan-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 14px;
+}
+@media (max-width: 900px) {
+  .scan-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.scan-card h3 {
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+
+.video-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #0b2538;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 12px 0;
+}
+.video-wrap video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.reticle {
+  position: absolute;
+  inset: 15%;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 16px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.field {
+  margin: 10px 0;
+}
+.field label {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text-mut);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+.field input,
+.field select {
+  width: 100%;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 13px;
+  background: #fff;
+}
+
+.msg-ok {
+  border-color: var(--srb-teal);
+  color: var(--srb-teal);
+  margin-bottom: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.msg-err {
+  border-color: var(--srb-coral);
+  color: var(--srb-coral);
+  margin-bottom: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.info-card .tips {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-mut);
+}
+.info-card .tips i {
+  color: var(--srb-teal);
+  margin-right: 6px;
+}

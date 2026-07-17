@@ -9,10 +9,16 @@ import { ServicePayload, ServiceReferentielService } from '../../../core/service
 import { ServiceFormModalComponent } from '../service-form-modal/service-form-modal.component';
 
 @Component({
+<<<<<<< HEAD
   selector: 'app-services-list',
   standalone: true,
   imports: [CommonModule, FormsModule, ServiceFormModalComponent],
   templateUrl: './services-list.component.html',
+=======
+    selector: 'app-services-list',
+    imports: [CommonModule, FormsModule, ServiceFormModalComponent],
+    templateUrl: './services-list.component.html'
+>>>>>>> 022816f6 (modification de la responsivité)
 })
 export class ServicesListComponent implements OnInit, OnDestroy {
   private readonly serviceReferentiel = inject(ServiceReferentielService);

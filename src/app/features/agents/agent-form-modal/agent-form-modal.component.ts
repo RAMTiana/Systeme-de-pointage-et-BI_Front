@@ -6,10 +6,16 @@ import { AgentCreate, AgentOut, AgentUpdate } from '../../../core/models/agent.m
 import { ServiceOut } from '../../../core/models/service.model';
 
 @Component({
+<<<<<<< HEAD
   selector: 'app-agent-form-modal',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './agent-form-modal.component.html',
+=======
+    selector: 'app-agent-form-modal',
+    imports: [CommonModule, ReactiveFormsModule],
+    templateUrl: './agent-form-modal.component.html'
+>>>>>>> 022816f6 (modification de la responsivité)
 })
 export class AgentFormModalComponent implements OnChanges {
   private readonly fb = inject(FormBuilder);

@@ -11,10 +11,16 @@ import { PointageService } from '../../../core/services/pointage.service';
 const LIMITE_PAR_PAGE = 20;
 
 @Component({
+<<<<<<< HEAD
   selector: 'app-pointage-list',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './pointage-list.component.html',
+=======
+    selector: 'app-pointage-list',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './pointage-list.component.html'
+>>>>>>> 022816f6 (modification de la responsivité)
 })
 export class PointageListComponent implements OnInit {
   private readonly pointageService = inject(PointageService);
