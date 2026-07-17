@@ -5,16 +5,9 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RoleOut, UtilisateurAdminOut, UtilisateurCreate, UtilisateurUpdate } from '../../../core/models/utilisateur-admin.model';
 
 @Component({
-<<<<<<< HEAD
-  selector: 'app-utilisateur-form-modal',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './utilisateur-form-modal.component.html',
-=======
     selector: 'app-utilisateur-form-modal',
     imports: [CommonModule, ReactiveFormsModule],
     templateUrl: './utilisateur-form-modal.component.html'
->>>>>>> 022816f6 (modification de la responsivité)
 })
 export class UtilisateurFormModalComponent implements OnChanges {
   private readonly fb = inject(FormBuilder);

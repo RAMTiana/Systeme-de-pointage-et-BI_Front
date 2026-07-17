@@ -17,18 +17,10 @@ interface NavGroup {
 }
 
 @Component({
-<<<<<<< HEAD
-  selector: 'app-shell',
-  standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
-  templateUrl: './shell.component.html',
-  styleUrl: './shell.component.scss',
-=======
     selector: 'app-shell',
     imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
     templateUrl: './shell.component.html',
     styleUrl: './shell.component.scss'
->>>>>>> 022816f6 (modification de la responsivité)
 })
 export class ShellComponent {
   menuOuvert = false;
@@ -44,10 +36,7 @@ export class ShellComponent {
         { lien: '/agents', icone: 'ti-users', libelle: 'Agents' },
         { lien: '/divisions', icone: 'ti-building', libelle: 'Divisions' },
         { lien: '/pointage', icone: 'ti-clock', libelle: 'Pointage' },
-<<<<<<< HEAD
-=======
         { lien: '/pointage/scan', icone: 'ti-scan', libelle: 'Poste de scan' },
->>>>>>> 022816f6 (modification de la responsivité)
         { lien: '/anomalies', icone: 'ti-alert-triangle', libelle: 'Anomalies' },
         { lien: '/rapports', icone: 'ti-file-report', libelle: 'Rapports' },
       ],

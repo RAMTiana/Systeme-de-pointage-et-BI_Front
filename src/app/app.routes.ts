@@ -37,14 +37,11 @@ export const routes: Routes = [
           import('./features/pointage/pointage-list/pointage-list.component').then((m) => m.PointageListComponent),
       },
       {
-<<<<<<< HEAD
-=======
         path: 'pointage/scan',
         loadComponent: () =>
           import('./features/pointage/pointage-scan/pointage-scan.component').then((m) => m.PointageScanComponent),
       },
       {
->>>>>>> 022816f6 (modification de la responsivité)
         path: 'anomalies',
         loadComponent: () =>
           import('./features/anomalies/anomalies-list/anomalies-list.component').then(

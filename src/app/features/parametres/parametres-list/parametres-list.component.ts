@@ -8,16 +8,9 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ParametreService } from '../../../core/services/parametre.service';
 
 @Component({
-<<<<<<< HEAD
-  selector: 'app-parametres-list',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './parametres-list.component.html',
-=======
     selector: 'app-parametres-list',
     imports: [CommonModule, FormsModule],
     templateUrl: './parametres-list.component.html'
->>>>>>> 022816f6 (modification de la responsivité)
 })
 export class ParametresListComponent implements OnInit {
   private readonly parametreService = inject(ParametreService);

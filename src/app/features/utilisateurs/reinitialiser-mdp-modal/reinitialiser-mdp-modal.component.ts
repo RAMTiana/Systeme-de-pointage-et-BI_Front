@@ -5,16 +5,9 @@ import { FormsModule } from '@angular/forms';
 import { UtilisateurAdminOut } from '../../../core/models/utilisateur-admin.model';
 
 @Component({
-<<<<<<< HEAD
-  selector: 'app-reinitialiser-mdp-modal',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './reinitialiser-mdp-modal.component.html',
-=======
     selector: 'app-reinitialiser-mdp-modal',
     imports: [CommonModule, FormsModule],
     templateUrl: './reinitialiser-mdp-modal.component.html'
->>>>>>> 022816f6 (modification de la responsivité)
 })
 export class ReinitialiserMdpModalComponent {
   @Input({ required: true }) utilisateur!: UtilisateurAdminOut;

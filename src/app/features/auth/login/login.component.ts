@@ -29,18 +29,10 @@ declare const google: {
 type EtapeReinitialisation = 'demande' | 'code' | 'terminee';
 
 @Component({
-<<<<<<< HEAD
-  selector: 'app-login',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './login.component.html',
-  styleUrl: './login.component.scss',
-=======
     selector: 'app-login',
     imports: [CommonModule, ReactiveFormsModule],
     templateUrl: './login.component.html',
     styleUrl: './login.component.scss'
->>>>>>> 022816f6 (modification de la responsivité)
 })
 export class LoginComponent implements AfterViewInit {
   private readonly fb = inject(FormBuilder);

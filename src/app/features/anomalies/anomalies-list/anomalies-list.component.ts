@@ -12,16 +12,9 @@ import { ServiceReferentielService } from '../../../core/services/service-refere
 const LIMITE_PAR_PAGE = 20;
 
 @Component({
-<<<<<<< HEAD
-  selector: 'app-anomalies-list',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './anomalies-list.component.html',
-=======
     selector: 'app-anomalies-list',
     imports: [CommonModule, FormsModule],
     templateUrl: './anomalies-list.component.html'
->>>>>>> 022816f6 (modification de la responsivité)
 })
 export class AnomaliesListComponent implements OnInit {
   private readonly anomalieService = inject(AnomalieService);

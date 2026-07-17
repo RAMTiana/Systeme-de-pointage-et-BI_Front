@@ -12,16 +12,9 @@ import { ServiceReferentielService } from '../../../core/services/service-refere
 const LIMITE_PAR_PAGE = 20;
 
 @Component({
-<<<<<<< HEAD
-  selector: 'app-rapports-list',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './rapports-list.component.html',
-=======
     selector: 'app-rapports-list',
     imports: [CommonModule, FormsModule],
     templateUrl: './rapports-list.component.html'
->>>>>>> 022816f6 (modification de la responsivité)
 })
 export class RapportsListComponent implements OnInit {
   private readonly rapportService = inject(RapportService);

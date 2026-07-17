@@ -14,16 +14,9 @@ const LIMITE_PAR_PAGE = 20;
 type Onglet = 'comptes' | 'roles';
 
 @Component({
-<<<<<<< HEAD
-  selector: 'app-utilisateurs-list',
-  standalone: true,
-  imports: [CommonModule, FormsModule, UtilisateurFormModalComponent, ReinitialiserMdpModalComponent],
-  templateUrl: './utilisateurs-list.component.html',
-=======
     selector: 'app-utilisateurs-list',
     imports: [CommonModule, FormsModule, UtilisateurFormModalComponent, ReinitialiserMdpModalComponent],
     templateUrl: './utilisateurs-list.component.html'
->>>>>>> 022816f6 (modification de la responsivité)
 })
 export class UtilisateursListComponent implements OnInit, OnDestroy {
   private readonly utilisateurAdmin = inject(UtilisateurAdminService);

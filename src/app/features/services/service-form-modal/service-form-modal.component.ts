@@ -6,16 +6,9 @@ import { ServiceOut } from '../../../core/models/service.model';
 import { ServicePayload } from '../../../core/services/service-referentiel.service';
 
 @Component({
-<<<<<<< HEAD
-  selector: 'app-service-form-modal',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './service-form-modal.component.html',
-=======
     selector: 'app-service-form-modal',
     imports: [CommonModule, ReactiveFormsModule],
     templateUrl: './service-form-modal.component.html'
->>>>>>> 022816f6 (modification de la responsivité)
 })
 export class ServiceFormModalComponent implements OnChanges {
   private readonly fb = inject(FormBuilder);
