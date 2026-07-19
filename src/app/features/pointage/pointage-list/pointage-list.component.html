@@ -89,7 +89,12 @@
             </span>
           </td>
           <td>{{ pointage.date_heure | date: 'dd/MM/y HH:mm' }}</td>
-          <td><span class="badge blue">{{ pointage.type_pointage === 'entree' ? 'Entrée' : 'Sortie' }}</span></td>
+          <td>
+            <span class="badge blue">{{ pointage.type_pointage === 'entree' ? 'Entrée' : 'Sortie' }}</span>
+            @if (libelleMotifSortie(pointage); as motif) {
+              <span class="badge amber" style="margin-left: 4px">{{ motif }}</span>
+            }
+          </td>
           <td class="muted"><i [class]="'ti ' + iconeMode(pointage.mode_pointage)"></i> {{ libelleMode(pointage.mode_pointage) }}</td>
           <td>
             <span
@@ -135,6 +140,18 @@
         <label>Type</label>
         <input type="text" disabled [value]="pointage.type_pointage === 'entree' ? 'Entrée' : 'Sortie'" />
       </div>
+      @if (libelleMotifSortie(pointage); as motif) {
+        <div class="field">
+          <label>Motif de sortie</label>
+          <input type="text" disabled [value]="motif" />
+        </div>
+      }
+      @if (pointage.commentaire) {
+        <div class="field">
+          <label>Commentaire</label>
+          <input type="text" disabled [value]="pointage.commentaire" />
+        </div>
+      }
       <div class="field">
         <label>Mode</label>
         <input type="text" disabled [value]="libelleMode(pointage.mode_pointage)" />

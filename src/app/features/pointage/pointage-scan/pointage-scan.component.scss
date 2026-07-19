@@ -65,6 +65,13 @@
   height: 100%;
   object-fit: cover;
 }
+.video-wrap .overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
 .reticle {
   position: absolute;
   inset: 15%;
@@ -83,6 +90,12 @@
   color: var(--text-mut);
   margin-bottom: 4px;
   font-weight: 600;
+}
+.field label .optionnel {
+  font-weight: 400;
+  text-transform: none;
+  color: var(--text-mut);
+  opacity: 0.75;
 }
 .field input,
 .field select {
@@ -125,4 +138,43 @@
 .info-card .tips i {
   color: var(--srb-teal);
   margin-right: 6px;
+}
+
+.motif-sortie-card {
+  margin-bottom: 14px;
+}
+.motif-sortie-card h3 {
+  font-size: 15px;
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.motif-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.motif-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-mut);
+  transition: all 0.16s ease;
+}
+.motif-chip:hover {
+  background: #f5f7f9;
+}
+.motif-chip.active {
+  background: linear-gradient(135deg, var(--srb-blue) 0%, #135f8b 100%);
+  color: #fff;
+  border-color: var(--srb-blue);
 }

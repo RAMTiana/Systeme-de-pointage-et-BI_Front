@@ -1,24 +1,20 @@
 import { AgentOut } from './agent.model';
 
 export type TypePointage = 'entree' | 'sortie';
-export type ModePointage = 'qr' | 'badge' | 'facial';
+export type ModePointage = 'qr' | 'badge' | 'facial' | 'webauthn';
 export type StatutPointage = 'valide' | 'rejete' | 'doublon';
 
 /**
- * Motifs de sortie tracés au pointage.
- *
- * `fin_service` correspond à la sortie normale de fin de journée / fin de poste :
- * c'est la valeur par défaut et celle qui n'entraîne aucun traitement particulier.
- * Les autres valeurs identifient des sorties exceptionnelles (à la discrétion
- * de l'agent de pointage) et permettent aux RH de filtrer/justifier ces départs.
+ * Motif déclaré pour une SORTIE (absent/non pertinent pour une ENTREE) : au-delà
+ * de la sortie normale de fin de service, le poste de scan permet de tracer une
+ * sortie exceptionnelle en cours de journée. 'autre' exige un commentaire.
  */
 export type MotifSortie =
-  | 'fin_service'
+  | 'normale'
   | 'urgence'
-  | 'cas_familial'
-  | 'medical'
-  | 'mission'
-  | 'pause'
+  | 'raison_familiale'
+  | 'raison_medicale'
+  | 'autorisation_hierarchie'
   | 'autre';
 
 export interface PointageOut {
@@ -29,6 +25,6 @@ export interface PointageOut {
   mode_pointage: ModePointage;
   statut: StatutPointage;
   motif_sortie?: MotifSortie | null;
-  commentaire_motif?: string | null;
+  commentaire?: string | null;
   agent?: AgentOut | null;
 }

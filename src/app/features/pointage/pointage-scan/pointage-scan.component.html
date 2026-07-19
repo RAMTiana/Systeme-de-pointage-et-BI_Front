@@ -1,52 +1,12 @@
 <div class="topbar">
   <h2>Poste de pointage</h2>
   <div class="actions">
-    <select [ngModel]="typePointage()" (ngModelChange)="typePointage.set($event)">
+    <select [ngModel]="typePointage()" (ngModelChange)="surChangementTypePointage($event)">
       <option [ngValue]="'entree'">Entrée</option>
       <option [ngValue]="'sortie'">Sortie</option>
     </select>
   </div>
 </div>
-
-<!--
-  Bloc « Motif de sortie » : affiché uniquement pour une sortie.
-  Une sortie normale de fin de service reste le choix par défaut, mais l'agent
-  de pointage peut préciser une sortie exceptionnelle (urgence, cas familial,
-  mission extérieure…) qui sera envoyée avec le pointage et tracée en base.
--->
-@if (typePointage() === 'sortie') {
-  <div class="card motif-card">
-    <h3><i class="ti ti-door-exit"></i> Motif de la sortie</h3>
-    <p class="sub">Sélectionnez le motif avant de scanner. Par défaut : fin de service.</p>
-
-    <div class="motif-options">
-      @for (opt of optionsMotifSortie; track opt.valeur) {
-        <label class="motif-chip" [class.active]="motifSortie() === opt.valeur">
-          <input
-            type="radio"
-            name="motifSortie"
-            [value]="opt.valeur"
-            [checked]="motifSortie() === opt.valeur"
-            (change)="motifSortie.set(opt.valeur)"
-          />
-          <span>{{ opt.libelle }}</span>
-        </label>
-      }
-    </div>
-
-    @if (motifSortie() !== 'fin_service') {
-      <div class="field">
-        <label>Précision (optionnel)</label>
-        <input
-          [ngModel]="commentaireMotif()"
-          (ngModelChange)="commentaireMotif.set($event)"
-          placeholder="ex : rendez-vous urgent hôpital central"
-          maxlength="200"
-        />
-      </div>
-    }
-  </div>
-}
 
 <div class="mode-tabs">
   <button class="mode-tab" [class.active]="mode() === 'qr'" (click)="surChangementMode('qr')">
@@ -59,6 +19,39 @@
     <i class="ti ti-fingerprint"></i> Biométrie appareil
   </button>
 </div>
+
+@if (typePointage() === 'sortie') {
+  <div class="card motif-sortie-card">
+    <h3><i class="ti ti-door-exit"></i> Motif de la sortie</h3>
+    <p class="sub">
+      Sélectionnez le motif si l'agent sort avant l'heure normale de fin de service
+      (urgence, cas familial, raison médicale…). Une sortie « normale » n'a rien à préciser.
+    </p>
+    <div class="motif-chips">
+      @for (option of motifsSortie; track option.valeur) {
+        <button
+          type="button"
+          class="motif-chip"
+          [class.active]="motifSortie() === option.valeur"
+          (click)="motifSortie.set(option.valeur)"
+        >
+          <i [class]="'ti ' + option.icone"></i> {{ option.libelle }}
+        </button>
+      }
+    </div>
+    @if (motifSortie() !== 'normale') {
+      <div class="field">
+        <label>Commentaire {{ motifSortie() === 'autre' ? '(obligatoire)' : '(facultatif)' }}</label>
+        <input
+          [ngModel]="commentaireSortie()"
+          (ngModelChange)="commentaireSortie.set($event)"
+          placeholder="ex : rendez-vous médical urgent, enfant malade…"
+          maxlength="500"
+        />
+      </div>
+    }
+  </div>
+}
 
 @if (message()) {
   <div class="card msg-ok"><i class="ti ti-check"></i> {{ message() }}</div>
@@ -85,17 +78,41 @@
 
     @if (mode() === 'facial') {
       <h3>Reconnaissance faciale</h3>
-      <p class="sub">Cadrez le visage et cliquez sur Capturer. Le back valide l'identité (consentement requis).</p>
+      <p class="sub">
+        Le visage capté est comparé à l'empreinte enregistrée pour valider le pointage
+        (consentement requis). Indiquez un matricule pour une vérification ciblée, ou laissez-le
+        vide pour une identification automatique parmi tous les agents enregistrés.
+      </p>
+      @if (chargementModeles()) {
+        <p class="empty-hint"><i class="ti ti-loader-2"></i> Chargement des modèles de reconnaissance faciale…</p>
+      }
       <div class="video-wrap">
         <video #videoFace playsinline muted></video>
+        <canvas #canvasOverlay class="overlay"></canvas>
       </div>
-      <canvas #canvasFace hidden></canvas>
+      @if (cameraFaceActive() && modelesPrets() && !visageDetecte()) {
+        <p class="empty-hint">
+          <i class="ti ti-face-id-error" style="color: var(--srb-coral)"></i> Aucun visage détecté — cadrez-le au centre.
+        </p>
+      }
       <div class="field">
-        <label>Matricule agent</label>
-        <input [ngModel]="matricule()" (ngModelChange)="matricule.set($event)" placeholder="ex : AG-0421" />
+        <label>Matricule agent <span class="optionnel">(facultatif)</span></label>
+        <input [ngModel]="matricule()" (ngModelChange)="matricule.set($event)" placeholder="ex : AG-0421 — laisser vide pour une identification automatique" />
+        <p class="empty-hint">
+          <i class="ti ti-info-circle"></i>
+          @if (matricule().trim()) {
+            Vérification 1:1 — le visage capté sera comparé uniquement à l'empreinte de cet agent.
+          } @else {
+            Identification automatique — le visage capté sera comparé à l'ensemble des agents enregistrés pour déterminer qui pointe.
+          }
+        </p>
       </div>
-      <button class="btn accent" (click)="capturerVisage()" [disabled]="enCours()">
-        <i class="ti ti-camera"></i> {{ enCours() ? 'Envoi…' : 'Capturer et pointer' }}
+      <button
+        class="btn accent"
+        (click)="capturerVisage()"
+        [disabled]="enCours() || !modelesPrets() || !visageDetecte()"
+      >
+        <i class="ti ti-camera"></i> {{ enCours() ? 'Comparaison en cours…' : 'Capturer et comparer' }}
       </button>
     }
 
@@ -121,13 +138,16 @@
     <h3>Mode courant</h3>
     <p class="sub">
       <span class="badge blue">{{ typePointage() === 'entree' ? 'Entrée' : 'Sortie' }}</span>
+      @if (typePointage() === 'sortie' && motifSortie() !== 'normale') {
+        <span class="badge amber" style="margin-left: 6px">Motif exceptionnel déclaré</span>
+      }
     </p>
     <ul class="tips">
       <li><i class="ti ti-shield-check"></i> HTTPS requis pour la caméra et WebAuthn.</li>
       <li><i class="ti ti-device-mobile"></i> Fonctionne sur téléphone, tablette et poste fixe.</li>
       <li><i class="ti ti-lock"></i> La clé de dispositif est envoyée dans l'en-tête X-Device-Key.</li>
       @if (typePointage() === 'sortie') {
-        <li><i class="ti ti-door-exit"></i> Précisez le motif pour les sorties exceptionnelles (urgence, familial, mission…).</li>
+        <li><i class="ti ti-info-circle"></i> Une sortie exceptionnelle justifiée (urgence, cas familial…) n'est pas comptée comme une anomalie à traiter par la secrétaire.</li>
       }
     </ul>
   </div>

@@ -147,16 +147,28 @@ export class PointageListComponent implements OnInit {
   }
 
   libelleMode(mode: ModePointage): string {
-    return { qr: 'QR code', badge: 'Badge', facial: 'Facial' }[mode];
+    return { qr: 'QR code', badge: 'Badge', facial: 'Facial', webauthn: 'Biométrie appareil' }[mode];
   }
 
   iconeMode(mode: ModePointage): string {
-    return { qr: 'ti-qrcode', badge: 'ti-credit-card', facial: 'ti-face-id' }[mode];
+    return { qr: 'ti-qrcode', badge: 'ti-credit-card', facial: 'ti-face-id', webauthn: 'ti-fingerprint' }[mode];
   }
 
   libelleStatut(pointage: PointageOut): string {
     if (pointage.statut === 'rejete') return 'Rejeté';
     if (pointage.statut === 'doublon') return 'Doublon';
     return 'Validé';
+  }
+
+  libelleMotifSortie(pointage: PointageOut): string | null {
+    if (!pointage.motif_sortie || pointage.motif_sortie === 'normale') return null;
+    const libelles: Record<string, string> = {
+      urgence: 'Urgence',
+      raison_familiale: 'Cas familial',
+      raison_medicale: 'Raison médicale',
+      autorisation_hierarchie: 'Autorisation hiérarchie',
+      autre: 'Autre',
+    };
+    return libelles[pointage.motif_sortie] ?? pointage.motif_sortie;
   }
 }

@@ -13,10 +13,21 @@ declare const BarcodeDetector: any;
 
 type Mode = 'qr' | 'facial' | 'webauthn';
 
-interface OptionMotif {
+/** Motifs proposés au poste de scan pour une SORTIE (cf. app.models.enums.MotifSortie côté back). */
+interface OptionMotifSortie {
   valeur: MotifSortie;
   libelle: string;
+  icone: string;
 }
+
+const MOTIFS_SORTIE: OptionMotifSortie[] = [
+  { valeur: 'normale', libelle: 'Sortie normale (fin de service)', icone: 'ti-door-exit' },
+  { valeur: 'urgence', libelle: 'Urgence', icone: 'ti-alert-triangle' },
+  { valeur: 'raison_familiale', libelle: 'Cas familial', icone: 'ti-home-heart' },
+  { valeur: 'raison_medicale', libelle: 'Raison médicale', icone: 'ti-first-aid-kit' },
+  { valeur: 'autorisation_hierarchie', libelle: 'Autorisation de la hiérarchie', icone: 'ti-user-check' },
+  { valeur: 'autre', libelle: 'Autre motif…', icone: 'ti-dots' },
+];
 
 @Component({
   selector: 'app-pointage-scan',
@@ -30,28 +41,12 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('videoQr') videoQr?: ElementRef<HTMLVideoElement>;
   @ViewChild('videoFace') videoFace?: ElementRef<HTMLVideoElement>;
-  @ViewChild('canvasFace') canvasFace?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('canvasOverlay') canvasOverlay?: ElementRef<HTMLCanvasElement>;
 
   readonly mode = signal<Mode>('qr');
   readonly typePointage = signal<TypePointage>('entree');
   readonly deviceKey = signal<string>(environment.deviceApiKey);
   readonly matricule = signal<string>('');
-
-  // Motif de sortie : demandé uniquement quand le type de pointage est « sortie ».
-  // Permet de tracer les sorties exceptionnelles (urgence, cas familial, mission…)
-  // en plus de la sortie normale de fin de service.
-  readonly motifSortie = signal<MotifSortie>('fin_service');
-  readonly commentaireMotif = signal<string>('');
-
-  readonly optionsMotifSortie: OptionMotif[] = [
-    { valeur: 'fin_service', libelle: 'Fin de service (sortie normale)' },
-    { valeur: 'urgence', libelle: 'Urgence' },
-    { valeur: 'cas_familial', libelle: 'Cas familial' },
-    { valeur: 'medical', libelle: 'Rendez-vous médical' },
-    { valeur: 'mission', libelle: 'Mission extérieure' },
-    { valeur: 'pause', libelle: 'Pause / déjeuner' },
-    { valeur: 'autre', libelle: 'Autre motif' },
-  ];
 
   readonly message = signal<string | null>(null);
   readonly erreur = signal<string | null>(null);
@@ -61,6 +56,19 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
   readonly webauthnSupporte = signal<boolean>(false);
   // true si on utilise le repli ZXing (navigateur sans BarcodeDetector natif : Firefox, Safari, iOS…).
   readonly qrModeCompatibilite = signal<boolean>(false);
+
+  // --------- Sortie exceptionnelle (urgence, cas familial, raison médicale…) ---------
+  readonly motifsSortie = MOTIFS_SORTIE;
+  readonly motifSortie = signal<MotifSortie>('normale');
+  readonly commentaireSortie = signal<string>('');
+
+  // --------- Reconnaissance faciale : comparaison réelle (face-api.js) ---------
+  readonly chargementModeles = signal(false);
+  readonly modelesPrets = signal(false);
+  readonly cameraFaceActive = signal(false);
+  readonly visageDetecte = signal(false);
+  private faceapi: any = null;
+  private boucleDetectionFaceActive = false;
 
   private streamQr: MediaStream | null = null;
   private streamFace: MediaStream | null = null;
@@ -93,6 +101,15 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
     setTimeout(() => this.demarrerModeCourant(), 50);
   }
 
+  /** Remet le motif de sortie à sa valeur par défaut quand on repasse en mode "entrée". */
+  surChangementTypePointage(t: TypePointage) {
+    this.typePointage.set(t);
+    if (t === 'entree') {
+      this.motifSortie.set('normale');
+      this.commentaireSortie.set('');
+    }
+  }
+
   private async demarrerModeCourant() {
     try {
       if (this.mode() === 'qr') await this.demarrerScanQr();
@@ -103,16 +120,28 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Construit la partie « motif de sortie » du payload (facultative).
-   * N'ajoute rien pour une entrée : le back-end conserve alors la valeur NULL.
+   * Construit le payload commun à envoyer au back, en ajoutant le motif de
+   * sortie déclaré (uniquement pertinent pour type_pointage = 'sortie').
+   * Cf. app.schemas.pointage._SortieDeclaree côté back.
    */
-  private champsMotifSortie(): Record<string, unknown> {
-    if (this.typePointage() !== 'sortie') return {};
-    const motif = this.motifSortie();
-    const commentaire = this.commentaireMotif().trim();
-    const champs: Record<string, unknown> = { motif_sortie: motif };
-    if (commentaire) champs['commentaire_motif'] = commentaire;
-    return champs;
+  private baseCharge(): Record<string, unknown> {
+    const charge: Record<string, unknown> = { type_pointage: this.typePointage() };
+    if (this.typePointage() === 'sortie') {
+      charge['motif_sortie'] = this.motifSortie();
+      const commentaire = this.commentaireSortie().trim();
+      if (commentaire) charge['commentaire'] = commentaire;
+    }
+    return charge;
+  }
+
+  /** Vérifie qu'un commentaire a bien été saisi quand le motif l'exige. */
+  private motifValide(): boolean {
+    if (this.typePointage() !== 'sortie') return true;
+    if (this.motifSortie() === 'autre' && !this.commentaireSortie().trim()) {
+      this.erreur.set("Précisez un commentaire pour le motif de sortie « Autre ».");
+      return false;
+    }
+    return true;
   }
 
   // --------- QR ---------
@@ -171,22 +200,26 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
    */
   private async gererCodeQrDetecte(contenu: string) {
     if (this.enPauseDetectionQr) return;
+    if (!this.motifValide()) return;
     this.enPauseDetectionQr = true;
     // Le QR agent encode uniquement le matricule (cf. app/schemas/pointage.py
     // _IdentifiantAgent — « le QR code ou le badge encode le matricule »).
-    await this.envoyerPointage('qr', {
-      matricule: contenu.trim(),
-      type_pointage: this.typePointage(),
-      ...this.champsMotifSortie(),
-    });
+    await this.envoyerPointage('qr', { matricule: contenu.trim(), ...this.baseCharge() });
     setTimeout(() => {
       this.enPauseDetectionQr = false;
     }, 1500);
   }
 
-  // --------- Facial ---------
+  // --------- Facial : capture + comparaison réelle (face-api.js) ---------
+  // La reconnaissance faciale au poste de scan calcule ici le même vecteur
+  // 128-D qu'à l'enrôlement (cf. agent-biometrie-modal.component.ts), afin
+  // que le back-end compare systématiquement ce vecteur à l'empreinte de
+  // référence de l'agent avant de valider ou de rejeter le pointage — jamais
+  // uniquement sur la foi du matricule saisi.
   private async demarrerCameraFace() {
     if (!this.videoFace) return;
+    this.erreur.set(null);
+    await this.chargerModelesFaciaux();
     this.streamFace = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'user' },
       audio: false,
@@ -194,29 +227,97 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
     const v = this.videoFace.nativeElement;
     v.srcObject = this.streamFace;
     await v.play();
+    this.cameraFaceActive.set(true);
+    this.boucleDetectionFaceActive = true;
+    this.boucleDetectionFace();
   }
 
-  capturerVisage() {
-    if (!this.videoFace || !this.canvasFace) return;
-    if (!this.matricule().trim()) {
-      this.erreur.set('Saisissez le matricule de l\'agent avant la capture faciale.');
-      return;
+  private async chargerModelesFaciaux(): Promise<void> {
+    if (this.modelesPrets()) return;
+    this.chargementModeles.set(true);
+    try {
+      const faceapi = await import('face-api.js');
+      this.faceapi = faceapi;
+      const url = environment.faceApiModelsUrl;
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(url),
+        faceapi.nets.faceLandmark68Net.loadFromUri(url),
+        faceapi.nets.faceRecognitionNet.loadFromUri(url),
+      ]);
+      this.modelesPrets.set(true);
+    } catch (e: any) {
+      this.erreur.set(
+        `Échec du chargement des modèles de reconnaissance faciale : ${e?.message ?? e}. Vérifiez la connexion réseau.`
+      );
+    } finally {
+      this.chargementModeles.set(false);
     }
-    const v = this.videoFace.nativeElement;
-    const c = this.canvasFace.nativeElement;
-    c.width = v.videoWidth;
-    c.height = v.videoHeight;
-    const ctx = c.getContext('2d');
-    if (!ctx) return;
-    ctx.drawImage(v, 0, 0, c.width, c.height);
-    const dataUrl = c.toDataURL('image/jpeg', 0.8);
-    const base64 = dataUrl.split(',')[1];
-    this.envoyerPointage('facial', {
-      matricule: this.matricule().trim(),
-      type_pointage: this.typePointage(),
-      image_base64: base64,
-      ...this.champsMotifSortie(),
-    });
+  }
+
+  private async boucleDetectionFace(): Promise<void> {
+    if (!this.boucleDetectionFaceActive || !this.videoFace || !this.canvasOverlay || !this.faceapi) return;
+    try {
+      const detection = await this.faceapi
+        .detectSingleFace(this.videoFace.nativeElement, new this.faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks();
+      const canvas = this.canvasOverlay.nativeElement;
+      const v = this.videoFace.nativeElement;
+      canvas.width = v.clientWidth;
+      canvas.height = v.clientHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (detection) {
+          const dims = { width: canvas.width, height: canvas.height };
+          const resized = this.faceapi.resizeResults(detection, dims);
+          ctx.strokeStyle = '#1fb6a4';
+          ctx.lineWidth = 2;
+          const b = resized.detection.box;
+          ctx.strokeRect(b.x, b.y, b.width, b.height);
+        }
+      }
+      this.visageDetecte.set(!!detection);
+    } catch {
+      /* transitoire : ignorer, la détection reprend à la frame suivante */
+    }
+    if (this.boucleDetectionFaceActive) requestAnimationFrame(() => this.boucleDetectionFace());
+  }
+
+  async capturerVisage(): Promise<void> {
+    if (!this.videoFace || !this.faceapi || !this.modelesPrets()) return;
+    if (!this.motifValide()) return;
+
+    this.enCours.set(true);
+    this.message.set(null);
+    this.erreur.set(null);
+    try {
+      // Recalcule un descripteur au moment précis de la capture (et non celui,
+      // potentiellement périmé, de la boucle d'aperçu) pour comparer l'instant réel du pointage.
+      const resultat = await this.faceapi
+        .detectSingleFace(this.videoFace.nativeElement, new this.faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+      if (!resultat) {
+        this.erreur.set('Aucun visage détecté. Cadrez le visage face à la caméra puis réessayez.');
+        this.enCours.set(false);
+        return;
+      }
+      const encodageFacial = Array.from(resultat.descriptor as Float32Array);
+      const matricule = this.matricule().trim();
+      // Le matricule est facultatif en mode facial : s'il est saisi, le back
+      // fait une vérification 1:1 (comparaison contre cet agent uniquement) ;
+      // s'il est omis, le back identifie l'agent par identification 1:N sur
+      // l'ensemble des empreintes enregistrées (cf. app/schemas/pointage.py
+      // PointageFacialCreate et app/services/pointage_service.identifier_par_visage).
+      await this.envoyerPointage('facial', {
+        ...(matricule ? { matricule } : {}),
+        encodage_facial: encodageFacial,
+        ...this.baseCharge(),
+      });
+    } catch (e: any) {
+      this.enCours.set(false);
+      this.erreur.set(`Échec de la capture : ${e?.message ?? e}`);
+    }
   }
 
   // --------- WebAuthn ---------
@@ -230,6 +331,7 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
       this.erreur.set('WebAuthn n\'est pas disponible sur cet appareil.');
       return;
     }
+    if (!this.motifValide()) return;
     this.enCours.set(true);
     this.message.set(null);
     this.erreur.set(null);
@@ -244,9 +346,8 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
       // 3) Envoie l'assertion signée : le back la vérifie contre la clé publique enregistrée.
       await this.envoyerPointage('webauthn', {
         matricule,
-        type_pointage: this.typePointage(),
         webauthn: assertion,
-        ...this.champsMotifSortie(),
+        ...this.baseCharge(),
       });
     } catch (e: any) {
       this.erreur.set(`Échec biométrique : ${e?.error?.detail ?? e?.message ?? e}`);
@@ -269,18 +370,15 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
             ? `${r.pointage.agent.prenom} ${r.pointage.agent.nom}`
             : `Agent #${r.pointage?.id_agent}`;
           const libelleType = this.typePointage() === 'entree' ? 'Entrée' : 'Sortie';
-          let suffixe = '';
-          if (this.typePointage() === 'sortie') {
-            const opt = this.optionsMotifSortie.find((o) => o.valeur === this.motifSortie());
-            if (opt) suffixe = ` — motif : ${opt.libelle}`;
-          }
-          this.message.set(`✓ ${libelleType} enregistrée pour ${nom}${suffixe}`);
+          const motif = r.pointage?.motif_sortie;
+          const suffixeMotif = motif && motif !== 'normale' ? ` (${this.libelleMotif(motif)})` : '';
+          this.message.set(`✓ ${libelleType}${suffixeMotif} enregistrée pour ${nom}`);
           if (r.anomalie_detectee) {
             this.message.update((m) => `${m} — anomalie : ${r.anomalie_detectee}`);
           }
-          // Réinitialise le commentaire libre après un envoi réussi (le motif reste
-          // sélectionné : plusieurs agents sortent souvent pour la même raison, ex. fin de service).
-          this.commentaireMotif.set('');
+          // Repart sur une base propre pour le prochain agent.
+          this.commentaireSortie.set('');
+          this.motifSortie.set('normale');
         },
         error: (err) => {
           const detail = err?.error?.detail ?? 'Le pointage n\'a pas pu être enregistré.';
@@ -289,8 +387,15 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
       });
   }
 
+  private libelleMotif(motif: MotifSortie): string {
+    return this.motifsSortie.find((m) => m.valeur === motif)?.libelle ?? motif;
+  }
+
   private arreterTout() {
     this.boucleQrActive = false;
+    this.boucleDetectionFaceActive = false;
+    this.cameraFaceActive.set(false);
+    this.visageDetecte.set(false);
     this.controlesZxing?.stop();
     this.controlesZxing = null;
     for (const s of [this.streamQr, this.streamFace]) {
