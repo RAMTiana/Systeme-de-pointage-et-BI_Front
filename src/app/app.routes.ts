@@ -55,6 +55,11 @@ export const routes: Routes = [
           import('./features/rapports/rapports-list/rapports-list.component').then((m) => m.RapportsListComponent),
       },
       {
+        path: 'assistant-ia',
+        loadComponent: () =>
+          import('./features/ia/assistant-ia.component').then((m) => m.AssistantIaComponent),
+      },
+      {
         path: 'utilisateurs',
         loadComponent: () =>
           import('./features/utilisateurs/utilisateurs-list/utilisateurs-list.component').then(
