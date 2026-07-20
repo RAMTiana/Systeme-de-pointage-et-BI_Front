@@ -4,7 +4,7 @@
     <div class="actions">
       <div class="search-box">
         <i class="ti ti-search"></i>
-        <input placeholder="Agent, matricule..." [(ngModel)]="recherche" />
+        <input placeholder="Agent, matricule..." [ngModel]="recherche()" (ngModelChange)="recherche.set($event)" />
       </div>
     </div>
   }
@@ -44,11 +44,12 @@
     <option [ngValue]="'entree'">Entrée</option>
     <option [ngValue]="'sortie'">Sortie</option>
   </select>
-  <select [(ngModel)]="modeFiltre">
+  <select [ngModel]="modeFiltre()" (ngModelChange)="modeFiltre.set($event)">
     <option [ngValue]="null">Tous modes</option>
     <option [ngValue]="'qr'">QR code</option>
     <option [ngValue]="'badge'">Badge</option>
     <option [ngValue]="'facial'">Facial</option>
+    <option [ngValue]="'webauthn'">Biométrie appareil</option>
   </select>
   <select [(ngModel)]="statutFiltre" (ngModelChange)="surChangementFiltreServeur()">
     <option [ngValue]="null">Tous statuts</option>

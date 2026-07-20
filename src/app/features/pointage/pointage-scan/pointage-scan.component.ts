@@ -67,8 +67,22 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
   readonly modelesPrets = signal(false);
   readonly cameraFaceActive = signal(false);
   readonly visageDetecte = signal(false);
+  // Progression (0 à 1) de la stabilisation avant capture automatique — sert
+  // uniquement à l'affichage d'un indicateur visuel pendant le temps de pose.
+  readonly progressionCaptureAuto = signal(0);
   private faceapi: any = null;
   private boucleDetectionFaceActive = false;
+  // Horodatage du début de détection continue du visage courant (null si aucun
+  // visage détecté depuis la dernière frame) — sert à exiger une pose stable
+  // avant de déclencher la capture automatique, pour éviter de capturer une
+  // image floue pendant que l'agent se positionne devant la caméra.
+  private detectionFaceStableDepuis: number | null = null;
+  // Empêche de déclencher plusieurs captures automatiques pour le même passage
+  // devant la caméra (le temps de l'envoi + une pause après le résultat, le
+  // temps que l'agent s'écarte) — pendant du enPauseDetectionQr côté QR.
+  private enPauseCaptureAuto = false;
+  private static readonly SEUIL_STABILISATION_MS = 900;
+  private static readonly PAUSE_APRES_CAPTURE_MS = 3000;
 
   private streamQr: MediaStream | null = null;
   private streamFace: MediaStream | null = null;
@@ -277,15 +291,51 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
         }
       }
       this.visageDetecte.set(!!detection);
+      this.suivreStabiliteEtDeclencherCaptureAuto(!!detection);
     } catch {
       /* transitoire : ignorer, la détection reprend à la frame suivante */
     }
     if (this.boucleDetectionFaceActive) requestAnimationFrame(() => this.boucleDetectionFace());
   }
 
+  /**
+   * Pointage facial automatique : dès qu'un visage reste détecté sans
+   * interruption pendant SEUIL_STABILISATION_MS (le temps que l'agent se
+   * positionne correctement, pour éviter de capturer une image floue en
+   * mouvement), la capture et l'envoi se déclenchent sans action de
+   * l'agent. Une pause (PAUSE_APRES_CAPTURE_MS) suit chaque tentative pour
+   * laisser le temps de s'écarter avant qu'un nouveau visage ne redéclenche
+   * une capture — sans quoi le même passage devant la caméra pourrait
+   * envoyer plusieurs pointages d'affilée.
+   */
+  private suivreStabiliteEtDeclencherCaptureAuto(detecte: boolean): void {
+    if (!detecte) {
+      this.detectionFaceStableDepuis = null;
+      this.progressionCaptureAuto.set(0);
+      return;
+    }
+    if (this.enPauseCaptureAuto || this.enCours() || !this.modelesPrets()) {
+      return;
+    }
+    if (this.detectionFaceStableDepuis === null) {
+      this.detectionFaceStableDepuis = performance.now();
+    }
+    const duree = performance.now() - this.detectionFaceStableDepuis;
+    this.progressionCaptureAuto.set(Math.min(1, duree / PointageScanComponent.SEUIL_STABILISATION_MS));
+
+    if (duree >= PointageScanComponent.SEUIL_STABILISATION_MS) {
+      this.enPauseCaptureAuto = true;
+      this.detectionFaceStableDepuis = null;
+      void this.capturerVisage();
+    }
+  }
+
   async capturerVisage(): Promise<void> {
     if (!this.videoFace || !this.faceapi || !this.modelesPrets()) return;
-    if (!this.motifValide()) return;
+    if (!this.motifValide()) {
+      this.liberePauseCaptureAutoApresDelai();
+      return;
+    }
 
     this.enCours.set(true);
     this.message.set(null);
@@ -300,6 +350,7 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
       if (!resultat) {
         this.erreur.set('Aucun visage détecté. Cadrez le visage face à la caméra puis réessayez.');
         this.enCours.set(false);
+        this.liberePauseCaptureAutoApresDelai(500);
         return;
       }
       const encodageFacial = Array.from(resultat.descriptor as Float32Array);
@@ -314,10 +365,20 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
         encodage_facial: encodageFacial,
         ...this.baseCharge(),
       });
+      this.liberePauseCaptureAutoApresDelai();
     } catch (e: any) {
       this.enCours.set(false);
       this.erreur.set(`Échec de la capture : ${e?.message ?? e}`);
+      this.liberePauseCaptureAutoApresDelai(500);
     }
+  }
+
+  /** Réautorise une nouvelle capture automatique après un court délai (laisse l'agent s'écarter). */
+  private liberePauseCaptureAutoApresDelai(delaiMs: number = PointageScanComponent.PAUSE_APRES_CAPTURE_MS): void {
+    setTimeout(() => {
+      this.enPauseCaptureAuto = false;
+      this.progressionCaptureAuto.set(0);
+    }, delaiMs);
   }
 
   // --------- WebAuthn ---------
@@ -396,6 +457,9 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
     this.boucleDetectionFaceActive = false;
     this.cameraFaceActive.set(false);
     this.visageDetecte.set(false);
+    this.detectionFaceStableDepuis = null;
+    this.enPauseCaptureAuto = false;
+    this.progressionCaptureAuto.set(0);
     this.controlesZxing?.stop();
     this.controlesZxing = null;
     for (const s of [this.streamQr, this.streamFace]) {

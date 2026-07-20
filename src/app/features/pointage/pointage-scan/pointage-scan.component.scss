@@ -178,3 +178,17 @@
   color: #fff;
   border-color: var(--srb-blue);
 }
+
+.capture-auto-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: #eef1f4;
+  overflow: hidden;
+  margin: 10px 0 4px;
+}
+.capture-auto-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--srb-blue) 0%, #1fb6a4 100%);
+  transition: width 0.08s linear;
+}

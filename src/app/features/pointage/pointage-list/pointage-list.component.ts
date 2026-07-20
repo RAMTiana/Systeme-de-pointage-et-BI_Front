@@ -46,14 +46,18 @@ export class PointageListComponent implements OnInit {
   dateFin: string | null = null;
 
   // Filtres appliqués côté client sur la page courante (non supportés par l'API).
-  recherche = '';
-  modeFiltre: ModePointage | null = null;
+  // Signaux (et non de simples propriétés) : `pointagesAffiches` est un
+  // computed() qui ne se recalcule que lorsqu'un signal qu'il lit change —
+  // avec de simples propriétés, taper dans la recherche ou changer le mode
+  // ne rafraîchissait jamais le tableau tant qu'aucun autre signal ne bougeait.
+  readonly recherche = signal('');
+  readonly modeFiltre = signal<ModePointage | null>(null);
 
   readonly pointageSelectionne = signal<PointageOut | null>(null);
 
   readonly pointagesAffiches = computed(() => {
-    const terme = this.recherche.trim().toLowerCase();
-    const mode = this.modeFiltre;
+    const terme = this.recherche().trim().toLowerCase();
+    const mode = this.modeFiltre();
     return this.pointages().filter((p) => {
       if (mode && p.mode_pointage !== mode) return false;
       if (!terme) return true;
