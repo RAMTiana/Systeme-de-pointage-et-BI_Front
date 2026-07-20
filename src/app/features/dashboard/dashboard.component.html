@@ -1,13 +1,29 @@
 <div class="topbar">
   <h2>Tableau de bord</h2>
   <div class="actions">
-    <select [(ngModel)]="idServiceSelectionne" (ngModelChange)="surChangementService()">
+    <select [(ngModel)]="idServiceSelectionne" (ngModelChange)="surChangementFiltre()">
       <option [ngValue]="null">Tous les divisions</option>
       @for (service of services(); track service.id_service) {
         <option [ngValue]="service.id_service">{{ service.nom_service }}</option>
       }
     </select>
-    <button class="btn"><i class="ti ti-calendar"></i> Aujourd'hui, {{ aujourdHui | date: 'd MMM y' }}</button>
+    <select [ngModel]="periode()" (ngModelChange)="periode.set($event); surChangementFiltre()">
+      @for (p of periodes; track p) {
+        <option [ngValue]="p">{{ p === 'jour' ? 'Jour' : p === 'semaine' ? 'Semaine' : p === 'mois' ? 'Mois' : 'Année' }}</option>
+      }
+    </select>
+    <label class="date-filter">
+      <i class="ti ti-calendar"></i>
+      <input
+        type="date"
+        [ngModel]="dateReferenceISO()"
+        [max]="dateMaxISO"
+        (ngModelChange)="surChangementDate($event)"
+      />
+    </label>
+    @if (!estAujourdHui()) {
+      <button class="btn" (click)="allerAujourdHui()"><i class="ti ti-rotate-clockwise"></i> Aujourd'hui</button>
+    }
   </div>
 </div>
 
@@ -24,7 +40,7 @@
   <div class="kpi-grid">
     <div class="kpi-card">
       <div class="lbl">
-        Présents aujourd'hui
+        Présents {{ libelleJourSnapshot() }}
         <div class="icon-badge" style="background: var(--srb-teal-light); color: var(--srb-teal)">
           <i class="ti ti-user-check"></i>
         </div>
@@ -58,15 +74,40 @@
     </div>
   </div>
 
+  <div class="card decision-panel">
+    <h3><i class="ti ti-bulb"></i> Aide à la décision</h3>
+    <p class="sub">Recommandations générées automatiquement à partir des indicateurs du périmètre sélectionné</p>
+    <div class="decision-grid">
+      @for (reco of recommandations(); track reco.id) {
+        <div class="decision-card" [class]="'niveau-' + reco.niveau">
+          <div class="decision-card-head">
+            <div class="decision-icon"><i class="ti" [class]="reco.icone"></i></div>
+            <span class="decision-badge">
+              @switch (reco.niveau) {
+                @case ('critique') { Critique }
+                @case ('attention') { À surveiller }
+                @case ('positif') { Point positif }
+                @default { Information }
+              }
+            </span>
+          </div>
+          <h4>{{ reco.titre }}</h4>
+          <p class="decision-desc">{{ reco.description }}</p>
+          <p class="decision-action"><i class="ti ti-arrow-right"></i> {{ reco.action }}</p>
+        </div>
+      }
+    </div>
+  </div>
+
   <div class="row-2">
     <div class="card">
       <h3>Tendance du taux de présence</h3>
-      <p class="sub">30 derniers jours{{ idServiceSelectionne() ? '' : ' — tous services' }}</p>
+      <p class="sub">{{ libelleFenetreTendance() }}{{ idServiceSelectionne() ? '' : ' — tous services' }}</p>
       <div style="height: 200px"><canvas #canvasTendance></canvas></div>
     </div>
     <div class="card">
       <h3>Comparaison entre divisions</h3>
-      <p class="sub">Taux de présence, période en cours</p>
+      <p class="sub">Taux de présence — {{ libellePeriodeCourante() }}</p>
       <div style="height: 200px"><canvas #canvasServices></canvas></div>
     </div>
   </div>
@@ -74,7 +115,7 @@
   <div class="row-2">
     <div class="card">
       <h3>Classement — ponctualité</h3>
-      <p class="sub">Agents les plus ponctuels ce mois-ci</p>
+      <p class="sub">Agents les plus ponctuels — {{ libellePeriodeCourante() }}</p>
       @if (classement().length) {
         <table>
           <tr>
@@ -103,7 +144,7 @@
     </div>
     <div class="card">
       <h3>Prévision — taux de ponctualité</h3>
-      <p class="sub">Estimation indicative (régression simple)</p>
+      <p class="sub">Estimation indicative par {{ libellePeriode().toLowerCase() }} (régression simple)</p>
       <div style="height: 170px"><canvas #canvasPrevision></canvas></div>
       <p class="empty-hint">
         <i class="ti ti-info-circle"></i> Estimation indicative fondée sur l'historique récent, à confirmer par

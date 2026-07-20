@@ -6,6 +6,7 @@ import {
   OnDestroy,
   OnInit,
   ViewChild,
+  computed,
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -20,13 +21,36 @@ import {
   PointTendance,
   PrevisionOut,
   TableauBordTempsReel,
+  TypePeriode,
 } from '../../core/models/bi.model';
 import { ServiceOut } from '../../core/models/service.model';
+import { calculerRecommandations, Recommandation } from './decision-support';
 
 Chart.register(...registerables);
 
 const GRIS_GRILLE = '#EEF0F2';
 const PALETTE_SERVICES = ['#0F6E56', '#185FA5', '#BA7517', '#534AB7', '#D85A30', '#0F3D5C'];
+
+const LIBELLE_PERIODE: Record<TypePeriode, string> = {
+  jour: 'Jour',
+  semaine: 'Semaine',
+  mois: 'Mois',
+  annee: 'Année',
+};
+
+const LIBELLE_FENETRE_TENDANCE: Record<TypePeriode, string> = {
+  jour: '30 derniers jours',
+  semaine: '12 dernières semaines',
+  mois: '12 derniers mois',
+  annee: '5 dernières années',
+};
+
+const LIBELLE_PERIODE_COURANTE: Record<TypePeriode, string> = {
+  jour: 'ce jour',
+  semaine: 'cette semaine',
+  mois: 'ce mois-ci',
+  annee: 'cette année',
+};
 
 function formatDateISO(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -35,6 +59,72 @@ function formatDateISO(date: Date): string {
 function formatDateCourte(iso: string): string {
   const [, mois, jour] = iso.split('-');
   return `${jour}/${mois}`;
+}
+
+function formatDateAffichage(iso: string): string {
+  const [annee, mois, jour] = iso.split('-');
+  return `${jour}/${mois}/${annee}`;
+}
+
+function debutDeJournee(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function lundiDeSemaine(date: Date): Date {
+  const d = debutDeJournee(date);
+  const decalage = (d.getDay() + 6) % 7; // 0 = lundi ... 6 = dimanche
+  d.setDate(d.getDate() - decalage);
+  return d;
+}
+
+/** Bornes de la période sélectionnée — même convention que `bornes_periode` côté backend. */
+function bornesPeriode(periode: TypePeriode, reference: Date): { debut: Date; fin: Date } {
+  const ref = debutDeJournee(reference);
+  switch (periode) {
+    case 'jour':
+      return { debut: ref, fin: ref };
+    case 'semaine': {
+      const debut = lundiDeSemaine(ref);
+      const fin = new Date(debut);
+      fin.setDate(fin.getDate() + 6);
+      return { debut, fin };
+    }
+    case 'mois': {
+      const debut = new Date(ref.getFullYear(), ref.getMonth(), 1);
+      const fin = new Date(ref.getFullYear(), ref.getMonth() + 1, 0);
+      return { debut, fin };
+    }
+    case 'annee':
+    default: {
+      const debut = new Date(ref.getFullYear(), 0, 1);
+      const fin = new Date(ref.getFullYear(), 11, 31);
+      return { debut, fin };
+    }
+  }
+}
+
+/** Fenêtre glissante affichée sur les graphiques de tendance/prévision, avec la granularité assortie. */
+function fenetreTendance(periode: TypePeriode, reference: Date): { debut: Date; fin: Date; granularite: TypePeriode } {
+  const fin = debutDeJournee(reference);
+  const debut = new Date(fin);
+  switch (periode) {
+    case 'jour':
+      debut.setDate(debut.getDate() - 29);
+      break;
+    case 'semaine':
+      debut.setDate(debut.getDate() - 7 * 11);
+      break;
+    case 'mois':
+      debut.setMonth(debut.getMonth() - 11);
+      break;
+    case 'annee':
+    default:
+      debut.setFullYear(debut.getFullYear() - 4);
+      break;
+  }
+  return { debut, fin, granularite: periode };
 }
 
 @Component({
@@ -54,10 +144,22 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly services = signal<ServiceOut[]>([]);
   readonly idServiceSelectionne = signal<number | null>(null);
 
+  readonly periodes: TypePeriode[] = ['jour', 'semaine', 'mois', 'annee'];
+  readonly periode = signal<TypePeriode>('mois');
+  readonly dateReferenceISO = signal(formatDateISO(new Date()));
+  readonly dateMaxISO = formatDateISO(new Date());
+
+  readonly libellePeriode = computed(() => LIBELLE_PERIODE[this.periode()]);
+  readonly libelleFenetreTendance = computed(() => LIBELLE_FENETRE_TENDANCE[this.periode()]);
+  readonly libellePeriodeCourante = computed(() => LIBELLE_PERIODE_COURANTE[this.periode()]);
+  readonly estAujourdHui = computed(() => this.dateReferenceISO() === this.dateMaxISO);
+  readonly libelleJourSnapshot = computed(() =>
+    this.estAujourdHui() ? "aujourd'hui" : `le ${formatDateAffichage(this.dateReferenceISO())}`
+  );
+
   readonly tempsReel = signal<TableauBordTempsReel | null>(null);
   readonly classement = signal<ClassementAgentOut[]>([]);
-
-  readonly aujourdHui = new Date();
+  readonly recommandations = signal<Recommandation[]>([]);
 
   private tendances: PointTendance[] = [];
   private comparaison: ComparaisonServicesOut | null = null;
@@ -93,7 +195,20 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.graphiquePrevision?.destroy();
   }
 
-  surChangementService(): void {
+  surChangementFiltre(): void {
+    this.chargerTableauDeBord();
+  }
+
+  surChangementDate(nouvelleDateISO: string): void {
+    if (!nouvelleDateISO) return;
+    // Une date future n'a pas de sens pour un tableau de bord de présence constatée.
+    this.dateReferenceISO.set(nouvelleDateISO > this.dateMaxISO ? this.dateMaxISO : nouvelleDateISO);
+    this.chargerTableauDeBord();
+  }
+
+  allerAujourdHui(): void {
+    if (this.estAujourdHui()) return;
+    this.dateReferenceISO.set(this.dateMaxISO);
     this.chargerTableauDeBord();
   }
 
@@ -102,16 +217,25 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.erreur.set(null);
 
     const idService = this.idServiceSelectionne() ?? undefined;
-    const auj = formatDateISO(this.aujourdHui);
-    const ilY30Jours = formatDateISO(new Date(this.aujourdHui.getTime() - 29 * 24 * 60 * 60 * 1000));
-    const debutDuMois = formatDateISO(new Date(this.aujourdHui.getFullYear(), this.aujourdHui.getMonth(), 1));
+    const periode = this.periode();
+    const refISO = this.dateReferenceISO();
+    const reference = new Date(`${refISO}T00:00:00`);
+
+    const { debut: debutPeriode, fin: finPeriode } = bornesPeriode(periode, reference);
+    const { debut: debutTendance, granularite } = fenetreTendance(periode, reference);
 
     forkJoin({
-      tempsReel: this.biService.tempsReel(idService, auj),
-      tendances: this.biService.tendances(ilY30Jours, auj, 'jour', idService),
-      comparaison: this.biService.comparaisonServices('mois'),
-      classement: this.biService.classement(debutDuMois, auj, 'ponctualite', 5, idService),
-      prevision: this.biService.prevision('mois', idService, 6, 3),
+      tempsReel: this.biService.tempsReel(idService, refISO),
+      tendances: this.biService.tendances(formatDateISO(debutTendance), refISO, granularite, idService),
+      comparaison: this.biService.comparaisonServices(periode, refISO),
+      classement: this.biService.classement(
+        formatDateISO(debutPeriode),
+        formatDateISO(finPeriode),
+        'ponctualite',
+        5,
+        idService
+      ),
+      prevision: this.biService.prevision(periode, idService, 6, 3, refISO),
     })
       .pipe(finalize(() => this.enChargement.set(false)))
       .subscribe({
@@ -121,6 +245,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
           this.tendances = resultats.tendances;
           this.comparaison = resultats.comparaison;
           this.prevision = resultats.prevision;
+          this.recommandations.set(
+            calculerRecommandations({
+              tempsReel: resultats.tempsReel,
+              tendances: resultats.tendances,
+              comparaison: resultats.comparaison,
+              classement: resultats.classement,
+              prevision: resultats.prevision,
+            })
+          );
           this.dessinerGraphiquesSiPossible();
         },
         error: () =>

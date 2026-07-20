@@ -63,7 +63,8 @@ export class BiService {
     granularite: TypePeriode = 'mois',
     idService?: number,
     nombrePeriodesHistorique = 6,
-    horizon = 3
+    horizon = 3,
+    dateReference?: string
   ): Observable<PrevisionOut> {
     return this.http.get<PrevisionOut>(`${this.base}/prevision`, {
       params: this.paramsSansVides({
@@ -71,6 +72,7 @@ export class BiService {
         id_service: idService,
         nombre_periodes_historique: nombrePeriodesHistorique,
         horizon,
+        date_reference: dateReference,
       }),
     });
   }
