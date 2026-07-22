@@ -70,13 +70,14 @@
         <div class="reticle"></div>
       </div>
       @if (qrModeCompatibilite()) {
+        
       }
     }
 
     @if (mode() === 'facial') {
       <h3>Reconnaissance faciale</h3>
       <p class="sub">
-        La capture se déclenche automatiquement dès qu'un visage est cadré et stable
+        La capture se déclenche automatiquement dès qu'un visage est cadré et stable .
       </p>
       @if (chargementModeles()) {
         <p class="empty-hint"><i class="ti ti-loader-2"></i> Chargement des modèles de reconnaissance faciale…</p>

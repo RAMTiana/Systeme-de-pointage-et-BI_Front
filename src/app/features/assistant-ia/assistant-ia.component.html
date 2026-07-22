@@ -1,0 +1,87 @@
+<button
+  type="button"
+  class="assistant-fab"
+  [class.actif]="ouvert()"
+  (click)="basculer()"
+  [attr.aria-label]="ouvert() ? 'Fermer l\'assistant IA' : 'Ouvrir l\'assistant IA'"
+>
+  <i class="ti" [ngClass]="ouvert() ? 'ti-x' : 'ti-message-chatbot'"></i>
+</button>
+
+@if (ouvert()) {
+  <div class="assistant-panel">
+    <div class="assistant-header">
+      <div class="titre">
+        <i class="ti ti-robot"></i>
+        <div>
+          <div class="nom">Assistant IA</div>
+          <div class="sous-titre">Anomalies · Prévisions · Rapports · RH</div>
+        </div>
+      </div>
+      <button type="button" class="icon-btn" (click)="fermer()" aria-label="Fermer">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+
+    <div class="assistant-messages" #zoneMessages>
+      @for (message of messages(); track $index) {
+        <div class="bulle" [class.utilisateur]="message.auteur === 'utilisateur'">
+          <div class="contenu">{{ message.texte }}</div>
+
+          @if (message.donnees && message.donnees['url_telechargement']) {
+            <button
+              type="button"
+              class="btn accent btn-telecharger"
+              [disabled]="idEnTelechargement() === message.donnees['id_rapport']"
+              (click)="telechargerRapport(message)"
+            >
+              <i class="ti ti-download"></i>
+              {{ idEnTelechargement() === message.donnees['id_rapport'] ? 'Téléchargement…' : 'Télécharger le rapport' }}
+            </button>
+          }
+
+          @if (message.actionsSuggerees?.length) {
+            <div class="actions-suggerees">
+              @for (action of message.actionsSuggerees; track action.intention) {
+                <button type="button" class="chip" (click)="utiliserAction(action)">
+                  {{ action.libelle }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      @if (enEnvoi()) {
+        <div class="bulle">
+          <div class="contenu en-cours"><i class="ti ti-dots"></i> L'assistant réfléchit…</div>
+        </div>
+      }
+
+      @if (messages().length <= 1 && capacites().length) {
+        <div class="capacites-initiales">
+          @for (capacite of capacites(); track capacite.intention) {
+            <button type="button" class="carte-capacite" (click)="utiliserCapacite(capacite)">
+              <div class="libelle">{{ capacite.libelle }}</div>
+              <div class="description">{{ capacite.description }}</div>
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <form class="assistant-saisie" (ngSubmit)="envoyerSaisie()">
+      <input
+        type="text"
+        name="message"
+        placeholder="Posez une question…"
+        [(ngModel)]="saisie"
+        [disabled]="enEnvoi()"
+        autocomplete="off"
+      />
+      <button type="submit" class="btn accent" [disabled]="enEnvoi() || !saisie.trim()">
+        <i class="ti ti-send"></i>
+      </button>
+    </form>
+  </div>
+}

@@ -3,6 +3,7 @@ import { Component, computed } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
+import { AssistantIaComponent } from '../../features/assistant-ia/assistant-ia.component';
 
 interface NavItem {
   lien: string;
@@ -18,7 +19,7 @@ interface NavGroup {
 
 @Component({
     selector: 'app-shell',
-    imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
+    imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, AssistantIaComponent],
     templateUrl: './shell.component.html',
     styleUrl: './shell.component.scss'
 })
@@ -28,9 +29,7 @@ export class ShellComponent {
   readonly groupesNav: NavGroup[] = [
     {
       libelle: 'Pilotage',
-      items: [{ lien: '/tableau-de-bord', icone: 'ti-chart-bar', libelle: 'Tableau de bord', permissionRequise: 'consulter_bi' },
-          { lien: '/assistant-ia', icone: 'ti-sparkles', libelle: 'Assistant IA', permissionRequise: 'consulter_bi' },
-      ],
+      items: [{ lien: '/tableau-de-bord', icone: 'ti-chart-bar', libelle: 'Tableau de bord', permissionRequise: 'consulter_bi' },],
     },
     {
       libelle: 'Opérations',
