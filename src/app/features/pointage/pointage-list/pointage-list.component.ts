@@ -10,7 +10,7 @@ import { ServiceReferentielService } from '../../../core/services/service-refere
 import { PointageService } from '../../../core/services/pointage.service';
 import { PointageScanComponent } from '../pointage-scan/pointage-scan.component';
 
-const LIMITE_PAR_PAGE = 20;
+const LIMITE_PAR_PAGE = 10;
 
 type OngletPointage = 'historique' | 'scan';
 

@@ -9,7 +9,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { RapportService } from '../../../core/services/rapport.service';
 import { ServiceReferentielService } from '../../../core/services/service-referentiel.service';
 
-const LIMITE_PAR_PAGE = 20;
+const LIMITE_PAR_PAGE = 10;
 
 @Component({
     selector: 'app-rapports-list',
