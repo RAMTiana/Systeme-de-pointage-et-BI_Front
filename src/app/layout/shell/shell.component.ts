@@ -29,7 +29,7 @@ export class ShellComponent {
   readonly groupesNav: NavGroup[] = [
     {
       libelle: 'Pilotage',
-      items: [{ lien: '/tableau-de-bord', icone: 'ti-chart-bar', libelle: 'Tableau de bord', permissionRequise: 'consulter_bi' },],
+      items: [{ lien: '/tableau-de-bord', icone: 'ti-chart-bar', libelle: 'Tableau de bord', permissionRequise: 'consulter_bi' }],
     },
     {
       libelle: 'Opérations',

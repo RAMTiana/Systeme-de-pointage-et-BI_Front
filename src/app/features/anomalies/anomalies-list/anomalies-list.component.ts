@@ -9,7 +9,7 @@ import { AnomalieService } from '../../../core/services/anomalie.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ServiceReferentielService } from '../../../core/services/service-referentiel.service';
 
-const LIMITE_PAR_PAGE = 10;
+const LIMITE_PAR_PAGE = 20;
 
 @Component({
     selector: 'app-anomalies-list',

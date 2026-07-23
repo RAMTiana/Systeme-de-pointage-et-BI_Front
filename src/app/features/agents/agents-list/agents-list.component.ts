@@ -11,7 +11,7 @@ import { ServiceReferentielService } from '../../../core/services/service-refere
 import { AgentFormModalComponent } from '../agent-form-modal/agent-form-modal.component';
 import { AgentBiometrieModalComponent } from '../agent-biometrie-modal/agent-biometrie-modal.component';
 
-const LIMITE_PAR_PAGE = 10;
+const LIMITE_PAR_PAGE = 20;
 
 @Component({
     selector: 'app-agents-list',

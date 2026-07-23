@@ -86,3 +86,32 @@ export interface PrevisionOut {
   prevision: PointPrevisionOut[];
   avertissement: string;
 }
+
+export interface AnomalieAgentScoreOut {
+  id_agent: number;
+  matricule: string;
+  nom: string;
+  prenom: string;
+  id_service: number | null;
+  nom_service: string | null;
+  jours_ouvres: number;
+  jours_presents: number;
+  nombre_retards: number;
+  nombre_absences: number;
+  nombre_departs_anticipes: number;
+  heures_travaillees: number;
+  taux_presence: number | null;
+  score_anomalie: number;
+  est_atypique: boolean;
+}
+
+export interface ScoreRisqueAgentOut {
+  id_agent: number;
+  matricule: string;
+  nom: string;
+  prenom: string;
+  id_service: number | null;
+  nom_service: string;
+  score_risque: number;
+  methode: string;
+}

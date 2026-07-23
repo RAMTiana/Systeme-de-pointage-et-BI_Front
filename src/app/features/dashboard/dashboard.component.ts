@@ -16,10 +16,12 @@ import { finalize, forkJoin } from 'rxjs';
 import { BiService } from '../../core/services/bi.service';
 import { ServiceReferentielService } from '../../core/services/service-referentiel.service';
 import {
+  AnomalieAgentScoreOut,
   ClassementAgentOut,
   ComparaisonServicesOut,
   PointTendance,
   PrevisionOut,
+  ScoreRisqueAgentOut,
   TableauBordTempsReel,
   TypePeriode,
 } from '../../core/models/bi.model';
@@ -160,6 +162,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly tempsReel = signal<TableauBordTempsReel | null>(null);
   readonly classement = signal<ClassementAgentOut[]>([]);
   readonly recommandations = signal<Recommandation[]>([]);
+  readonly anomaliesMl = signal<AnomalieAgentScoreOut[]>([]);
+  readonly scoreRisque = signal<ScoreRisqueAgentOut[]>([]);
 
   private tendances: PointTendance[] = [];
   private comparaison: ComparaisonServicesOut | null = null;
@@ -236,6 +240,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         idService
       ),
       prevision: this.biService.prevision(periode, idService, 6, 3, refISO),
+      anomaliesMl: this.biService.anomaliesMl(periode, idService, refISO),
+      scoreRisque: this.biService.scoreRisque(idService, 7, refISO),
     })
       .pipe(finalize(() => this.enChargement.set(false)))
       .subscribe({
@@ -245,6 +251,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
           this.tendances = resultats.tendances;
           this.comparaison = resultats.comparaison;
           this.prevision = resultats.prevision;
+          this.anomaliesMl.set(resultats.anomaliesMl);
+          this.scoreRisque.set(resultats.scoreRisque);
           this.recommandations.set(
             calculerRecommandations({
               tempsReel: resultats.tempsReel,
@@ -252,6 +260,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
               comparaison: resultats.comparaison,
               classement: resultats.classement,
               prevision: resultats.prevision,
+              anomaliesMl: resultats.anomaliesMl,
+              scoresRisque: resultats.scoreRisque,
             })
           );
           this.dessinerGraphiquesSiPossible();

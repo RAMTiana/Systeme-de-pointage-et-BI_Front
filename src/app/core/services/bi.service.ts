@@ -4,11 +4,13 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import {
+  AnomalieAgentScoreOut,
   ClassementAgentOut,
   ComparaisonServicesOut,
   CritereClassement,
   PointTendance,
   PrevisionOut,
+  ScoreRisqueAgentOut,
   TableauBordTempsReel,
   TypePeriode,
 } from '../models/bi.model';
@@ -72,6 +74,43 @@ export class BiService {
         id_service: idService,
         nombre_periodes_historique: nombrePeriodesHistorique,
         horizon,
+        date_reference: dateReference,
+      }),
+    });
+  }
+
+  /** Variante machine learning de `prevision()` (gradient boosting, repli automatique si historique trop court). */
+  previsionMl(
+    granularite: TypePeriode = 'mois',
+    idService?: number,
+    nombrePeriodesHistorique = 6,
+    horizon = 3,
+    dateReference?: string
+  ): Observable<PrevisionOut> {
+    return this.http.get<PrevisionOut>(`${this.base}/prevision-ml`, {
+      params: this.paramsSansVides({
+        granularite,
+        id_service: idService,
+        nombre_periodes_historique: nombrePeriodesHistorique,
+        horizon,
+        date_reference: dateReference,
+      }),
+    });
+  }
+
+  /** Détection d'anomalies « intelligente » (Isolation Forest) : profils d'agents atypiques sur la période. */
+  anomaliesMl(typePeriode: TypePeriode = 'mois', idService?: number, dateReference?: string): Observable<AnomalieAgentScoreOut[]> {
+    return this.http.get<AnomalieAgentScoreOut[]>(`${this.base}/anomalies-ml`, {
+      params: this.paramsSansVides({ type_periode: typePeriode, id_service: idService, date_reference: dateReference }),
+    });
+  }
+
+  /** Score de risque par agent (probabilité de retard/absence sur la période à venir). */
+  scoreRisque(idService?: number, nombreMoisHistorique = 7, dateReference?: string): Observable<ScoreRisqueAgentOut[]> {
+    return this.http.get<ScoreRisqueAgentOut[]>(`${this.base}/score-risque`, {
+      params: this.paramsSansVides({
+        id_service: idService,
+        nombre_mois_historique: nombreMoisHistorique,
         date_reference: dateReference,
       }),
     });
