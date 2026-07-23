@@ -70,18 +70,13 @@
         <div class="reticle"></div>
       </div>
       @if (qrModeCompatibilite()) {
-        <p class="empty-hint">
-          <i class="ti ti-info-circle"></i> Mode compatibilité actif (ZXing) — votre navigateur n'a pas de lecteur QR natif, mais le scan fonctionne normalement.
-        </p>
       }
     }
 
     @if (mode() === 'facial') {
       <h3>Reconnaissance faciale</h3>
       <p class="sub">
-        La capture se déclenche automatiquement dès qu'un visage est cadré et stable —
-        aucun bouton à presser. Indiquez un matricule pour une vérification ciblée, ou
-        laissez-le vide pour une identification automatique parmi tous les agents enregistrés.
+        La capture se déclenche automatiquement dès qu'un visage est cadré et stable.
       </p>
       @if (chargementModeles()) {
         <p class="empty-hint"><i class="ti ti-loader-2"></i> Chargement des modèles de reconnaissance faciale…</p>
@@ -104,25 +99,6 @@
       @if (enCours()) {
         <p class="empty-hint"><i class="ti ti-loader-2"></i> Comparaison en cours…</p>
       }
-      <div class="field">
-        <label>Matricule agent <span class="optionnel">(facultatif)</span></label>
-        <input [ngModel]="matricule()" (ngModelChange)="matricule.set($event)" placeholder="ex : AG-0421 — laisser vide pour une identification automatique" />
-        <p class="empty-hint">
-          <i class="ti ti-info-circle"></i>
-          @if (matricule().trim()) {
-            Vérification 1:1 — le visage capté sera comparé uniquement à l'empreinte de cet agent.
-          } @else {
-            Identification automatique — le visage capté sera comparé à l'ensemble des agents enregistrés pour déterminer qui pointe.
-          }
-        </p>
-      </div>
-      <button
-        class="btn ghost"
-        (click)="capturerVisage()"
-        [disabled]="enCours() || !modelesPrets() || !visageDetecte()"
-      >
-        <i class="ti ti-camera"></i> {{ enCours() ? 'Comparaison en cours…' : 'Forcer la capture maintenant' }}
-      </button>
     }
 
     @if (mode() === 'webauthn') {
