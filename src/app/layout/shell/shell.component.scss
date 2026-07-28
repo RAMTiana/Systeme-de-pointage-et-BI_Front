@@ -34,12 +34,7 @@
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--srb-teal) 0%, #1aa97f 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 14px;
+  object-fit: cover;
   flex-shrink: 0;
   box-shadow: 0 10px 24px rgba(15, 110, 86, 0.25);
 }

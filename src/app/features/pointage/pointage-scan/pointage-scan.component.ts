@@ -56,6 +56,11 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
   readonly webauthnSupporte = signal<boolean>(false);
   // true si on utilise le repli ZXing (navigateur sans BarcodeDetector natif : Firefox, Safari, iOS…).
   readonly qrModeCompatibilite = signal<boolean>(false);
+  // Sous-étape du mode QR : 'scan' (lecture du QR) puis 'confirmation_visage'
+  // (double authentification — le QR seul n'identifie que le prétendant ; le
+  // visage confirme que c'est bien cet agent-là qui pointe, pas un collègue
+  // utilisant son badge).
+  readonly etapeQr = signal<'scan' | 'confirmation_visage'>('scan');
 
   // --------- Sortie exceptionnelle (urgence, cas familial, raison médicale…) ---------
   readonly motifsSortie = MOTIFS_SORTIE;
@@ -67,6 +72,11 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
   readonly modelesPrets = signal(false);
   readonly cameraFaceActive = signal(false);
   readonly visageDetecte = signal(false);
+  // true = bouton "Démarrer" affiché, caméra/détection à l'arrêt (mode
+  // reconnaissance faciale autonome uniquement) — évite qu'une caméra allumée
+  // en continu re-capture le même agent une seconde fois juste après son
+  // pointage : il faut un nouveau clic explicite pour chaque agent.
+  readonly pretAScannerVisage = signal(true);
   // Progression (0 à 1) de la stabilisation avant capture automatique — sert
   // uniquement à l'affichage d'un indicateur visuel pendant le temps de pose.
   readonly progressionCaptureAuto = signal(0);
@@ -126,11 +136,33 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
 
   private async demarrerModeCourant() {
     try {
-      if (this.mode() === 'qr') await this.demarrerScanQr();
-      else if (this.mode() === 'facial') await this.demarrerCameraFace();
+      if (this.mode() === 'qr') {
+        this.etapeQr.set('scan');
+        await this.demarrerScanQr();
+      } else if (this.mode() === 'facial') {
+        // Ne démarre pas la caméra automatiquement : on attend un clic explicite
+        // (cf. demarrerReconnaissanceFaciale) pour éviter qu'elle tourne en
+        // continu et scanne le même agent plusieurs fois d'affilée.
+        this.pretAScannerVisage.set(true);
+      }
     } catch (e: any) {
       this.erreur.set(`Impossible d'accéder à la caméra : ${e?.message ?? e}`);
     }
+  }
+
+  /** Déclenché par le bouton "Démarrer la reconnaissance faciale" (mode autonome, hors QR). */
+  demarrerReconnaissanceFaciale(): void {
+    this.erreur.set(null);
+    this.pretAScannerVisage.set(false);
+    // Attendre le prochain cycle Angular pour que <video #videoFace> soit rendu.
+    setTimeout(async () => {
+      try {
+        await this.demarrerCameraFace();
+      } catch (e: any) {
+        this.erreur.set(`Impossible d'accéder à la caméra : ${e?.message ?? e}`);
+        this.pretAScannerVisage.set(true);
+      }
+    }, 50);
   }
 
   /**
@@ -216,12 +248,27 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
     if (this.enPauseDetectionQr) return;
     if (!this.motifValide()) return;
     this.enPauseDetectionQr = true;
-    // Le QR agent encode uniquement le matricule (cf. app/schemas/pointage.py
-    // _IdentifiantAgent — « le QR code ou le badge encode le matricule »).
-    await this.envoyerPointage('qr', { matricule: contenu.trim(), ...this.baseCharge() });
-    setTimeout(() => {
-      this.enPauseDetectionQr = false;
-    }, 1500);
+
+    // Double authentification : le QR seul n'identifie que le prétendant à ce
+    // matricule. On bascule sur la caméra faciale pour vérifier en 1:1 que
+    // c'est bien cet agent-là qui se présente — empêche qu'un agent pointe
+    // avec le QR/badge d'un collègue (cf. PointageFacialCreate.matricule côté
+    // back : vérification 1:1 déjà supportée, aucun changement backend requis).
+    const matriculeLu = contenu.trim();
+    this.arreterCameraQr();
+    this.matricule.set(matriculeLu);
+    this.etapeQr.set('confirmation_visage');
+    this.message.set(null);
+    this.erreur.set(null);
+    // Attendre le prochain cycle Angular pour que <video #videoFace> soit rendu
+    // (même précaution que surChangementMode).
+    setTimeout(async () => {
+      try {
+        await this.demarrerCameraFace();
+      } catch (e: any) {
+        this.erreur.set(`Impossible d'accéder à la caméra faciale : ${e?.message ?? e}`);
+      }
+    }, 50);
   }
 
   // --------- Facial : capture + comparaison réelle (face-api.js) ---------
@@ -440,32 +487,80 @@ export class PointageScanComponent implements AfterViewInit, OnDestroy {
           // Repart sur une base propre pour le prochain agent.
           this.commentaireSortie.set('');
           this.motifSortie.set('normale');
+          if (mode === 'facial') void this.apresPointageFacial();
         },
         error: (err) => {
           const detail = err?.error?.detail ?? 'Le pointage n\'a pas pu être enregistré.';
           this.erreur.set(detail);
+          if (mode === 'facial') void this.apresPointageFacial();
         },
       });
+  }
+
+  /**
+   * Après un pointage facial (succès ou échec) :
+   * - si on venait de la confirmation QR (double authentification), revient
+   *   au scan QR pour l'agent suivant ;
+   * - si on est en mode reconnaissance faciale autonome, coupe la caméra et
+   *   réaffiche le bouton de démarrage (un clic = un agent, jamais de scan
+   *   en continu qui pourrait re-capturer deux fois la même personne).
+   */
+  private async apresPointageFacial(): Promise<void> {
+    if (this.mode() === 'qr' && this.etapeQr() === 'confirmation_visage') {
+      await this.terminerConfirmationQr();
+    } else if (this.mode() === 'facial') {
+      this.arreterCameraFaceLocal();
+      this.pretAScannerVisage.set(true);
+    }
   }
 
   private libelleMotif(motif: MotifSortie): string {
     return this.motifsSortie.find((m) => m.valeur === motif)?.libelle ?? motif;
   }
 
-  private arreterTout() {
+  private arreterCameraQr(): void {
     this.boucleQrActive = false;
+    this.controlesZxing?.stop();
+    this.controlesZxing = null;
+    this.streamQr?.getTracks().forEach((t) => t.stop());
+    this.streamQr = null;
+  }
+
+  private arreterCameraFaceLocal(): void {
     this.boucleDetectionFaceActive = false;
     this.cameraFaceActive.set(false);
     this.visageDetecte.set(false);
     this.detectionFaceStableDepuis = null;
     this.enPauseCaptureAuto = false;
     this.progressionCaptureAuto.set(0);
-    this.controlesZxing?.stop();
-    this.controlesZxing = null;
-    for (const s of [this.streamQr, this.streamFace]) {
-      s?.getTracks().forEach((t) => t.stop());
-    }
-    this.streamQr = null;
+    this.streamFace?.getTracks().forEach((t) => t.stop());
     this.streamFace = null;
+  }
+
+  /** Fin de la confirmation faciale (succès ou échec) : relance le scan QR pour l'agent suivant. */
+  private async terminerConfirmationQr(): Promise<void> {
+    this.arreterCameraFaceLocal();
+    this.matricule.set('');
+    this.etapeQr.set('scan');
+    this.enPauseDetectionQr = false;
+    // Petite pause pour laisser le temps de lire le message avant de relancer le scan.
+    setTimeout(() => {
+      if (this.mode() === 'qr' && this.etapeQr() === 'scan') void this.demarrerScanQr();
+    }, 1200);
+  }
+
+  /** Bouton "Annuler" pendant la confirmation faciale (ex. QR mal lu) — relance directement le scan QR. */
+  annulerConfirmationQr(): void {
+    if (this.mode() !== 'qr' || this.etapeQr() !== 'confirmation_visage') return;
+    this.message.set(null);
+    this.erreur.set(null);
+    void this.terminerConfirmationQr();
+  }
+
+  private arreterTout() {
+    this.arreterCameraQr();
+    this.arreterCameraFaceLocal();
+    this.etapeQr.set('scan');
+    this.pretAScannerVisage.set(true);
   }
 }

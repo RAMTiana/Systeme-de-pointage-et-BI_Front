@@ -63,41 +63,43 @@
 <div class="scan-grid">
   <div class="card scan-card">
     @if (mode() === 'qr') {
-      <h3>Scanner un QR code</h3>
-      <p class="sub">Présentez le QR agent devant la caméra arrière.</p>
-      <div class="video-wrap">
-        <video #videoQr playsinline muted></video>
-        <div class="reticle"></div>
-      </div>
-      @if (qrModeCompatibilite()) {
+      @if (etapeQr() === 'scan') {
+        <h3>Scanner un QR code</h3>
+        <p class="sub">Présentez le QR agent devant la caméra arrière.</p>
+        <div class="video-wrap">
+          <video #videoQr playsinline muted></video>
+          <div class="reticle"></div>
+        </div>
+        @if (qrModeCompatibilite()) {
+          <p class="empty-hint">
+            <i class="ti ti-info-circle"></i> Mode compatibilité actif (ZXing) — votre navigateur n'a pas de lecteur QR natif, mais le scan fonctionne normalement.
+          </p>
+        }
+      } @else {
+        <h3><i class="ti ti-face-id"></i> Confirmation par reconnaissance faciale</h3>
+        <p class="sub">
+          Double authentification : QR lu pour le matricule <strong>{{ matricule() }}</strong> —
+          présentez maintenant le visage de l'agent pour confirmer que c'est bien lui qui pointe.
+        </p>
+        <ng-container *ngTemplateOutlet="apercuFacial"></ng-container>
+        <button class="btn ghost" (click)="annulerConfirmationQr()" [disabled]="enCours()">
+          <i class="ti ti-x"></i> Annuler / rescanner un QR
+        </button>
       }
     }
 
     @if (mode() === 'facial') {
       <h3>Reconnaissance faciale</h3>
       <p class="sub">
-        La capture se déclenche automatiquement dès qu'un visage est cadré et stable.
+        Cliquez sur « Démarrer » pour activer la caméra pour un agent. La capture se déclenche
+        automatiquement dès qu'un visage est cadré et stable; recliquez pour l'agent suivant.
       </p>
-      @if (chargementModeles()) {
-        <p class="empty-hint"><i class="ti ti-loader-2"></i> Chargement des modèles de reconnaissance faciale…</p>
-      }
-      <div class="video-wrap">
-        <video #videoFace playsinline muted></video>
-        <canvas #canvasOverlay class="overlay"></canvas>
-      </div>
-      @if (cameraFaceActive() && modelesPrets() && !visageDetecte() && !enCours()) {
-        <p class="empty-hint">
-          <i class="ti ti-face-id-error" style="color: var(--srb-coral)"></i> Aucun visage détecté — cadrez-le au centre.
-        </p>
-      }
-      @if (visageDetecte() && !enCours() && progressionCaptureAuto() > 0) {
-        <div class="capture-auto-progress">
-          <div class="capture-auto-progress-bar" [style.width.%]="progressionCaptureAuto() * 100"></div>
-        </div>
-        <p class="empty-hint"><i class="ti ti-camera"></i> Visage détecté — restez immobile, capture en cours…</p>
-      }
-      @if (enCours()) {
-        <p class="empty-hint"><i class="ti ti-loader-2"></i> Comparaison en cours…</p>
+      @if (pretAScannerVisage()) {
+        <button class="btn accent" (click)="demarrerReconnaissanceFaciale()">
+          <i class="ti ti-face-id"></i> Démarrer la reconnaissance faciale
+        </button>
+      } @else {
+        <ng-container *ngTemplateOutlet="apercuFacial"></ng-container>
       }
     }
 
@@ -118,6 +120,31 @@
       </p>
     }
   </div>
+
+  <ng-template #apercuFacial>
+    @if (chargementModeles()) {
+      <p class="empty-hint"><i class="ti ti-loader-2"></i> Chargement des modèles de reconnaissance faciale…</p>
+    }
+    <div class="video-wrap">
+      <video #videoFace playsinline muted></video>
+      <canvas #canvasOverlay class="overlay"></canvas>
+    </div>
+    @if (cameraFaceActive() && modelesPrets() && !visageDetecte() && !enCours()) {
+      <p class="empty-hint">
+        <i class="ti ti-face-id-error" style="color: var(--srb-coral)"></i> Aucun visage détecté — cadrez-le au centre.
+      </p>
+    }
+    @if (visageDetecte() && !enCours() && progressionCaptureAuto() > 0) {
+      <div class="capture-auto-progress">
+        <div class="capture-auto-progress-bar" [style.width.%]="progressionCaptureAuto() * 100"></div>
+      </div>
+      <p class="empty-hint"><i class="ti ti-camera"></i> Visage détecté — restez immobile, capture en cours…</p>
+    }
+    @if (enCours()) {
+      <p class="empty-hint"><i class="ti ti-loader-2"></i> Comparaison en cours…</p>
+    }
+  </ng-template>
+
 
   <div class="card info-card">
     <h3>Mode courant</h3>
