@@ -74,7 +74,7 @@
             [disabled]="!modelesPrets() || !cameraActive() || !visageDetecte() || enCoursFacial()"
             (click)="capturerEtEnregistrer()"
           >
-            <i class="ti ti-camera"></i> {{ enCoursFacial() ? 'Enregistrement…' : "Capturer et enregistrer l'empreinte" }}
+            <i class="ti ti-camera"></i> {{ enCoursFacial() ? 'Enregistrement…' : "Capturer et enregistrer l'empreinte faciale" }}
           </button>
 
           @if (agent.empreinte_faciale_enregistree) {
