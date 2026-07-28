@@ -50,6 +50,11 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'conges',
+        loadComponent: () =>
+          import('./features/conges/conges-list/conges-list.component').then((m) => m.CongesListComponent),
+      },
+      {
         path: 'rapports',
         loadComponent: () =>
           import('./features/rapports/rapports-list/rapports-list.component').then((m) => m.RapportsListComponent),
