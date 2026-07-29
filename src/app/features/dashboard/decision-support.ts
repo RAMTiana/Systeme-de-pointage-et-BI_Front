@@ -20,6 +20,7 @@ import {
   ScoreRisqueAgentOut,
   TableauBordTempsReel,
 } from '../../core/models/bi.model';
+import { AnomalieDetailOut } from '../../core/models/anomalie.model';
 
 export type NiveauRecommandation = 'critique' | 'attention' | 'positif' | 'info';
 
@@ -40,11 +41,84 @@ const SEUIL_ECART_TENDANCE = 3; // points de %, sur la fenêtre observée
 const SEUIL_ECART_PREVISION = 3; // points de %, entre dernier historique et dernière prévision
 const SEUIL_RISQUE_ELEVE = 0.6; // score de risque ML (0-1) à partir duquel un agent est signalé
 const NB_MAX_AGENTS_SIGNALES = 3; // nombre d'agents cités nommément par recommandation ML
+const SEUIL_RETARDS_CONSECUTIFS = 3; // nombre de jours ouvrés consécutifs de retard déclenchant l'avertissement
+const SEUIL_ABSENCES_CONSECUTIVES = 2; // nombre de jours ouvrés consécutifs d'absence déclenchant l'avertissement
 
 const PCT = (v: number | null | undefined): string => (v === null || v === undefined ? 'n/d' : `${(v * 100).toFixed(1)} %`);
 
 function poidsNiveau(niveau: NiveauRecommandation): number {
   return { critique: 0, attention: 1, positif: 2, info: 3 }[niveau];
+}
+
+/** Nombre de jours ouvrés (hors week-end) entre deux dates ISO consécutives dans une série triée. */
+function estJourOuvreSuivant(dateIsoPrecedente: string, dateIsoCourante: string): boolean {
+  const precedente = new Date(`${dateIsoPrecedente}T00:00:00`);
+  const courante = new Date(`${dateIsoCourante}T00:00:00`);
+  const ecartJours = Math.round((courante.getTime() - precedente.getTime()) / (24 * 60 * 60 * 1000));
+  if (ecartJours === 1) return true;
+  // Vendredi (5) -> lundi suivant : 3 jours calendaires d'écart, mais 1 jour ouvré.
+  return ecartJours === 3 && precedente.getDay() === 5;
+}
+
+interface AgentAnomalieConsecutive {
+  id_agent: number;
+  nom: string;
+  service: string;
+  nombreJours: number;
+  derniereDate: string;
+}
+
+/**
+ * Repère, parmi une liste d'anomalies d'un même type (retard ou absence) sur
+ * la semaine en cours, les agents ayant enregistré cette anomalie au moins
+ * `seuilJours` jours ouvrés d'affilée (ex. lundi, mardi, mercredi).
+ * Fonction générique réutilisée pour la règle 9 (retards répétés) et la
+ * règle 10 (absences répétées) du moteur de recommandations.
+ */
+function detecterAnomaliesConsecutives(
+  anomaliesSemaine: AnomalieDetailOut[],
+  seuilJours: number
+): AgentAnomalieConsecutive[] {
+  const parAgent = new Map<number, { dates: Set<string>; nom: string; service: string }>();
+
+  for (const anomalie of anomaliesSemaine) {
+    const dateIso = anomalie.date_detection.slice(0, 10);
+    let entree = parAgent.get(anomalie.id_agent);
+    if (!entree) {
+      const agent = anomalie.agent;
+      entree = {
+        dates: new Set(),
+        nom: agent ? `${agent.prenom} ${agent.nom}` : `Agent #${anomalie.id_agent}`,
+        service: agent?.service?.nom_service ?? 'Division non renseignée',
+      };
+      parAgent.set(anomalie.id_agent, entree);
+    }
+    entree.dates.add(dateIso);
+  }
+
+  const resultats: AgentAnomalieConsecutive[] = [];
+  for (const [idAgent, { dates, nom, service }] of parAgent) {
+    const datesTriees = [...dates].sort();
+    let streak = 1;
+    let meilleureStreak = 1;
+    let derniereDateStreak = datesTriees[0];
+    for (let i = 1; i < datesTriees.length; i++) {
+      if (estJourOuvreSuivant(datesTriees[i - 1], datesTriees[i])) {
+        streak += 1;
+      } else {
+        streak = 1;
+      }
+      if (streak > meilleureStreak) {
+        meilleureStreak = streak;
+        derniereDateStreak = datesTriees[i];
+      }
+    }
+    if (meilleureStreak >= seuilJours) {
+      resultats.push({ id_agent: idAgent, nom, service, nombreJours: meilleureStreak, derniereDate: derniereDateStreak });
+    }
+  }
+
+  return resultats.sort((a, b) => b.nombreJours - a.nombreJours);
 }
 
 export function calculerRecommandations(donnees: {
@@ -57,9 +131,26 @@ export function calculerRecommandations(donnees: {
   // l'appelant ne consulte pas (encore) ces nouveaux endpoints.
   anomaliesMl?: AnomalieAgentScoreOut[];
   scoresRisque?: ScoreRisqueAgentOut[];
+  // Anomalies de type "retard" détectées depuis le lundi de la semaine en
+  // cours jusqu'à aujourd'hui — sert uniquement à repérer les retards
+  // répétés plusieurs jours ouvrés d'affilée (cf. règle 9 ci-dessous).
+  anomaliesRetardSemaine?: AnomalieDetailOut[];
+  // Idem pour les anomalies de type "absence" — sert à la règle 10
+  // (absences répétées) ci-dessous.
+  anomaliesAbsenceSemaine?: AnomalieDetailOut[];
 }): Recommandation[] {
   const recommandations: Recommandation[] = [];
-  const { tempsReel, tendances, comparaison, classement, prevision, anomaliesMl, scoresRisque } = donnees;
+  const {
+    tempsReel,
+    tendances,
+    comparaison,
+    classement,
+    prevision,
+    anomaliesMl,
+    scoresRisque,
+    anomaliesRetardSemaine,
+    anomaliesAbsenceSemaine,
+  } = donnees;
 
   // 1. Taux de présence du jour
   if (tempsReel && tempsReel.taux_presence !== null) {
@@ -218,6 +309,44 @@ export function calculerRecommandations(donnees: {
         titre: 'Profils de présence atypiques détectés',
         description: `L'analyse comparative (IA) signale un profil inhabituel sur la période pour : ${noms}${complement}, sans qu'un seuil individuel ne soit nécessairement dépassé.`,
         action: 'Examiner le détail de ces agents dans le module BI avant de conclure à une anomalie avérée.',
+      });
+    }
+  }
+
+  // 9. Retards répétés plusieurs jours ouvrés d'affilée dans la semaine en cours
+  if (anomaliesRetardSemaine && anomaliesRetardSemaine.length > 0) {
+    const agentsEnRetardRepete = detecterAnomaliesConsecutives(anomaliesRetardSemaine, SEUIL_RETARDS_CONSECUTIFS);
+    if (agentsEnRetardRepete.length > 0) {
+      const cites = agentsEnRetardRepete.slice(0, NB_MAX_AGENTS_SIGNALES);
+      const noms = cites.map((a) => `${a.nom} (${a.service}, ${a.nombreJours} jours consécutifs)`).join(', ');
+      const complement =
+        agentsEnRetardRepete.length > cites.length ? ` et ${agentsEnRetardRepete.length - cites.length} autre(s)` : '';
+      recommandations.push({
+        id: 'retards-consecutifs-semaine',
+        niveau: 'critique',
+        icone: 'ti-alert-octagon',
+        titre: 'Avertissement — retards répétés cette semaine',
+        description: `${noms}${complement} : retard constaté au moins ${SEUIL_RETARDS_CONSECUTIFS} jours ouvrés consécutifs depuis le début de la semaine.`,
+        action: "Convoquer l'agent concerné pour un rappel du règlement intérieur et envisager une alerte formelle à son responsable de division.",
+      });
+    }
+  }
+
+  // 10. Absences répétées plusieurs jours ouvrés d'affilée dans la semaine en cours
+  if (anomaliesAbsenceSemaine && anomaliesAbsenceSemaine.length > 0) {
+    const agentsEnAbsenceRepetee = detecterAnomaliesConsecutives(anomaliesAbsenceSemaine, SEUIL_ABSENCES_CONSECUTIVES);
+    if (agentsEnAbsenceRepetee.length > 0) {
+      const cites = agentsEnAbsenceRepetee.slice(0, NB_MAX_AGENTS_SIGNALES);
+      const noms = cites.map((a) => `${a.nom} (${a.service}, ${a.nombreJours} jours consécutifs)`).join(', ');
+      const complement =
+        agentsEnAbsenceRepetee.length > cites.length ? ` et ${agentsEnAbsenceRepetee.length - cites.length} autre(s)` : '';
+      recommandations.push({
+        id: 'absences-consecutives-semaine',
+        niveau: 'critique',
+        icone: 'ti-user-x',
+        titre: 'Avertissement — absences répétées cette semaine',
+        description: `${noms}${complement} : absence constatée au moins ${SEUIL_ABSENCES_CONSECUTIVES} jours ouvrés consécutifs depuis le début de la semaine, sans justification enregistrée à ce stade.`,
+        action: "Contacter l'agent ou son responsable de division sans délai pour identifier le motif et vérifier qu'aucune situation grave n'est en cause.",
       });
     }
   }

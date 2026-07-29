@@ -11,8 +11,9 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
-import { finalize, forkJoin } from 'rxjs';
+import { finalize, forkJoin, map } from 'rxjs';
 
+import { AnomalieService } from '../../core/services/anomalie.service';
 import { BiService } from '../../core/services/bi.service';
 import { ServiceReferentielService } from '../../core/services/service-referentiel.service';
 import {
@@ -139,6 +140,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('canvasTendance') canvasTendance!: ElementRef<HTMLCanvasElement>;
   @ViewChild('canvasServices') canvasServices!: ElementRef<HTMLCanvasElement>;
   @ViewChild('canvasPrevision') canvasPrevision!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('canvasAbsencesRetards') canvasAbsencesRetards!: ElementRef<HTMLCanvasElement>;
 
   readonly enChargement = signal(true);
   readonly erreur = signal<string | null>(null);
@@ -161,6 +163,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   readonly tempsReel = signal<TableauBordTempsReel | null>(null);
   readonly classement = signal<ClassementAgentOut[]>([]);
+  readonly classementAbsences = signal<ClassementAgentOut[]>([]);
   readonly recommandations = signal<Recommandation[]>([]);
   readonly anomaliesMl = signal<AnomalieAgentScoreOut[]>([]);
   readonly scoreRisque = signal<ScoreRisqueAgentOut[]>([]);
@@ -172,11 +175,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private graphiqueTendance?: Chart;
   private graphiqueServices?: Chart;
   private graphiquePrevision?: Chart;
+  private graphiqueAbsencesRetards?: Chart;
 
   private vueInitialisee = false;
 
   constructor(
     private readonly biService: BiService,
+    private readonly anomalieService: AnomalieService,
     private readonly serviceReferentiel: ServiceReferentielService
   ) {}
 
@@ -197,6 +202,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.graphiqueTendance?.destroy();
     this.graphiqueServices?.destroy();
     this.graphiquePrevision?.destroy();
+    this.graphiqueAbsencesRetards?.destroy();
   }
 
   surChangementFiltre(): void {
@@ -228,6 +234,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     const { debut: debutPeriode, fin: finPeriode } = bornesPeriode(periode, reference);
     const { debut: debutTendance, granularite } = fenetreTendance(periode, reference);
 
+    // Avertissement "retards consécutifs" : toujours basé sur la semaine
+    // civile en cours (aujourd'hui), indépendamment de la date affichée par
+    // le filtre du tableau de bord — c'est un signal d'alerte permanent.
+    const aujourdHui = new Date();
+    const lundiSemaineEnCours = lundiDeSemaine(aujourdHui);
+
     forkJoin({
       tempsReel: this.biService.tempsReel(idService, refISO),
       tendances: this.biService.tendances(formatDateISO(debutTendance), refISO, granularite, idService),
@@ -239,15 +251,41 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         5,
         idService
       ),
+      classementAbsences: this.biService.classement(
+        formatDateISO(debutPeriode),
+        formatDateISO(finPeriode),
+        'absences',
+        5,
+        idService
+      ),
       prevision: this.biService.prevision(periode, idService, 6, 3, refISO),
       anomaliesMl: this.biService.anomaliesMl(periode, idService, refISO),
       scoreRisque: this.biService.scoreRisque(idService, 7, refISO),
+      anomaliesRetardSemaine: this.anomalieService
+        .lister({
+          type_anomalie: 'retard',
+          id_service: idService,
+          date_debut: formatDateISO(lundiSemaineEnCours),
+          date_fin: formatDateISO(aujourdHui),
+          limit: 200,
+        })
+        .pipe(map((page) => page.items)),
+      anomaliesAbsenceSemaine: this.anomalieService
+        .lister({
+          type_anomalie: 'absence',
+          id_service: idService,
+          date_debut: formatDateISO(lundiSemaineEnCours),
+          date_fin: formatDateISO(aujourdHui),
+          limit: 200,
+        })
+        .pipe(map((page) => page.items)),
     })
       .pipe(finalize(() => this.enChargement.set(false)))
       .subscribe({
         next: (resultats) => {
           this.tempsReel.set(resultats.tempsReel);
           this.classement.set(resultats.classement);
+          this.classementAbsences.set(resultats.classementAbsences);
           this.tendances = resultats.tendances;
           this.comparaison = resultats.comparaison;
           this.prevision = resultats.prevision;
@@ -262,6 +300,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
               prevision: resultats.prevision,
               anomaliesMl: resultats.anomaliesMl,
               scoresRisque: resultats.scoreRisque,
+              anomaliesRetardSemaine: resultats.anomaliesRetardSemaine,
+              anomaliesAbsenceSemaine: resultats.anomaliesAbsenceSemaine,
             })
           );
           this.dessinerGraphiquesSiPossible();
@@ -280,6 +320,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.dessinerTendance();
     this.dessinerComparaisonServices();
     this.dessinerPrevision();
+    this.dessinerAbsencesRetards();
   }
 
   private optionsAxes(): ChartConfiguration['options'] {
@@ -382,6 +423,69 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         ],
       },
       options: this.optionsAxes(),
+    });
+  }
+
+  /**
+   * Évolution comparée des taux d'absence et de retard sur la même fenêtre
+   * que le graphique de tendance de présence (`this.tendances`) : chaque
+   * point de tendance porte déjà `globaux.nombre_absences` /
+   * `globaux.nombre_retards` / `globaux.jours_ouvres`, d'où sont dérivés ici
+   * les deux taux (jours-agent d'absence ou de retard rapportés aux
+   * jours-agent ouvrés de la période), sans appel API supplémentaire.
+   */
+  private dessinerAbsencesRetards(): void {
+    if (!this.canvasAbsencesRetards) return;
+    this.graphiqueAbsencesRetards?.destroy();
+
+    const labels = this.tendances.map((p) => formatDateCourte(p.periode_debut));
+    const tauxAbsence = this.tendances.map((p) =>
+      p.globaux.jours_ouvres > 0 ? Math.round((p.globaux.nombre_absences / p.globaux.jours_ouvres) * 1000) / 10 : 0
+    );
+    const tauxRetard = this.tendances.map((p) =>
+      p.globaux.jours_ouvres > 0 ? Math.round((p.globaux.nombre_retards / p.globaux.jours_ouvres) * 1000) / 10 : 0
+    );
+
+    this.graphiqueAbsencesRetards = new Chart(this.canvasAbsencesRetards.nativeElement, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Absences',
+            data: tauxAbsence,
+            borderColor: '#D85A30',
+            backgroundColor: 'rgba(216,90,48,0.08)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 0,
+            borderWidth: 2,
+          },
+          {
+            label: 'Retards',
+            data: tauxRetard,
+            borderColor: '#BA7517',
+            backgroundColor: 'rgba(186,117,23,0.08)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 0,
+            borderWidth: 2,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 10.5 } } } },
+        scales: {
+          y: {
+            min: 0,
+            grid: { color: GRIS_GRILLE },
+            ticks: { font: { size: 10.5 }, callback: (valeur) => `${valeur}%` },
+          },
+          x: { grid: { display: false }, ticks: { font: { size: 10.5 } } },
+        },
+      },
     });
   }
 }

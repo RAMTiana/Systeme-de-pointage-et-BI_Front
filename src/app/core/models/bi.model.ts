@@ -1,5 +1,5 @@
 export type TypePeriode = 'jour' | 'semaine' | 'mois' | 'annee';
-export type CritereClassement = 'ponctualite' | 'retards';
+export type CritereClassement = 'ponctualite' | 'retards' | 'absences';
 
 export interface ServiceTempsReel {
   id_service: number | null;
@@ -12,9 +12,20 @@ export interface ServiceTempsReel {
   taux_presence: number | null;
 }
 
+export interface AgentSignalTempsReel {
+  id_agent: number;
+  matricule: string;
+  nom: string;
+  prenom: string;
+  id_service: number | null;
+  nom_service: string;
+}
+
 export interface TableauBordTempsReel extends ServiceTempsReel {
   jour: string;
   detail_services: ServiceTempsReel[];
+  agents_absents: AgentSignalTempsReel[];
+  agents_retardataires: AgentSignalTempsReel[];
 }
 
 export interface IndicateursGlobaux {

@@ -68,7 +68,7 @@
     <div class="kpi-card">
       <div class="lbl">
         Taux de présence
-        <div class="icon-badge" style="background: var(--chip-blue-bg); color: var(--chip-blue-text)"><i class="ti ti-percentage"></i></div>
+        <div class="icon-badge" style="background: #e6f1fb; color: #185fa5"><i class="ti ti-percentage"></i></div>
       </div>
       <div class="val">{{ tr.taux_presence !== null ? (tr.taux_presence | number: '1.1-1') + '%' : '—' }}</div>
     </div>
@@ -95,6 +95,55 @@
           <p class="decision-desc">{{ reco.description }}</p>
           <p class="decision-action"><i class="ti ti-arrow-right"></i> {{ reco.action }}</p>
         </div>
+      }
+    </div>
+  </div>
+
+  <div class="row-2">
+    <div class="card">
+      <h3><i class="ti ti-user-off"></i> Agents absents {{ libelleJourSnapshot() }}</h3>
+      <p class="sub">Détail nominatif — {{ tr.agents_absents.length }} agent(s) sans pointage aujourd'hui</p>
+      @if (tr.agents_absents.length) {
+        <table>
+          <tr>
+            <th>Agent</th>
+            <th>Divisions</th>
+          </tr>
+          @for (agent of tr.agents_absents; track agent.id_agent) {
+            <tr>
+              <td class="agent-cell">
+                <div class="agent-init">{{ agent.nom[0] }}{{ agent.prenom[0] }}</div>
+                <span class="name">{{ agent.prenom }} {{ agent.nom }}</span>
+              </td>
+              <td class="muted">{{ agent.nom_service }}</td>
+            </tr>
+          }
+        </table>
+      } @else {
+        <p class="empty-hint">Aucun agent absent sur le périmètre sélectionné.</p>
+      }
+    </div>
+    <div class="card">
+      <h3><i class="ti ti-clock-exclamation"></i> Agents en retard {{ libelleJourSnapshot() }}</h3>
+      <p class="sub">Détail nominatif — {{ tr.agents_retardataires.length }} agent(s) signalé(s)</p>
+      @if (tr.agents_retardataires.length) {
+        <table>
+          <tr>
+            <th>Agent</th>
+            <th>Divisions</th>
+          </tr>
+          @for (agent of tr.agents_retardataires; track agent.id_agent) {
+            <tr>
+              <td class="agent-cell">
+                <div class="agent-init">{{ agent.nom[0] }}{{ agent.prenom[0] }}</div>
+                <span class="name">{{ agent.prenom }} {{ agent.nom }}</span>
+              </td>
+              <td class="muted">{{ agent.nom_service }}</td>
+            </tr>
+          }
+        </table>
+      } @else {
+        <p class="empty-hint">Aucun retard signalé sur le périmètre sélectionné.</p>
       }
     </div>
   </div>
@@ -150,6 +199,43 @@
         <i class="ti ti-info-circle"></i> Estimation indicative fondée sur l'historique récent, à confirmer par
         l'analyse de la hiérarchie.
       </p>
+    </div>
+  </div>
+
+  <div class="row-2">
+    <div class="card">
+      <h3>Évolution des absences et retards</h3>
+      <p class="sub">{{ libelleFenetreTendance() }}{{ idServiceSelectionne() ? '' : ' — tous services' }}</p>
+      <div style="height: 200px"><canvas #canvasAbsencesRetards></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Classement — absences</h3>
+      <p class="sub">Agents les plus souvent absents — {{ libellePeriodeCourante() }}</p>
+      @if (classementAbsences().length) {
+        <table>
+          <tr>
+            <th>Agent</th>
+            <th>Divisions</th>
+            <th style="text-align: right">Absences</th>
+          </tr>
+          @for (agent of classementAbsences(); track agent.id_agent) {
+            <tr>
+              <td class="agent-cell">
+                <div class="agent-init">{{ agent.nom[0] }}{{ agent.prenom[0] }}</div>
+                <span class="name">{{ agent.prenom }} {{ agent.nom }}</span>
+              </td>
+              <td class="muted">{{ agent.nom_service }}</td>
+              <td style="text-align: right">
+                <span class="badge" [class.green]="agent.nombre_absences === 0" [class.red]="agent.nombre_absences > 0">
+                  {{ agent.nombre_absences }}
+                </span>
+              </td>
+            </tr>
+          }
+        </table>
+      } @else {
+        <p class="empty-hint">Aucune donnée sur la période.</p>
+      }
     </div>
   </div>
   }
