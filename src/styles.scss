@@ -1,20 +1,107 @@
-/* Design tokens repris de la maquette (mockup_srb.html) — source de vérité visuelle du projet. */
-:root {
+/* =======================================================================
+   DESIGN TOKENS — thème clair (par défaut) et thème sombre.
+   - variables sémantiques (surface, texte, accent) plutôt que des teintes
+     figées, pour que chaque composant s'adapte automatiquement ;
+   - couleurs "ink" séparées des couleurs "solides" : une couleur de marque
+     utilisée en fond de bouton (texte blanc dessus) n'a pas les mêmes
+     contraintes de contraste qu'une couleur utilisée comme texte sur une
+     surface neutre — les deux variantes sont distinctes et calculées pour
+     rester ≥ 4.5:1 (WCAG 2.2 AA, texte normal) dans les deux thèmes ;
+   - le thème actif est piloté par l'attribut [data-theme] sur <html>,
+     positionné très tôt (script inline dans index.html) pour éviter tout
+     flash de contenu non stylé (FOUC) au chargement.
+   ======================================================================= */
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  /* Couleurs de marque — utilisées comme FOND (avec texte blanc dessus)
+     ou comme liséré/accent décoratif. Restent stables entre les thèmes. */
   --srb-blue: #0f3d5c;
   --srb-blue-dark: #0a2c43;
   --srb-teal: #0f6e56;
-  --srb-teal-light: #e1f5ee;
   --srb-coral: #d85a30;
-  --srb-coral-light: #faece7;
   --srb-amber: #ba7517;
+  --info: #185fa5;
+
+  /* Variantes "ink" — texte/icônes de marque posés sur une surface neutre
+     ou sur une teinte pastel (--*-light). Identiques aux couleurs solides
+     en thème clair, réajustées en thème sombre pour garder le contraste. */
+  --srb-blue-ink: var(--srb-blue);
+  --srb-teal-ink: var(--srb-teal);
+  --srb-coral-ink: var(--srb-coral);
+  --srb-amber-ink: var(--srb-amber);
+  --info-ink: var(--info);
+
+  /* Teintes pastel (fond de badges/cartes) associées à chaque couleur */
+  --srb-teal-light: #e1f5ee;
+  --srb-coral-light: #faece7;
   --srb-amber-light: #faeeda;
+  --info-light: #e6f1fb;
+
+  /* Surfaces & fond de page */
   --bg: #f2f4f6;
   --card: #ffffff;
+  --surface: #ffffff;
+  --surface-hover: #f5f7f9;
+  --surface-muted: #fafbfc;
+  --chip-neutral-bg: #eef0f2;
   --border: #e1e5ea;
+
+  /* Texte */
   --text: #1c2733;
   --text-mut: #5b6b7a;
   --text-soft: #8a97a3;
+
+  /* Effets */
   --shadow: 0 12px 36px rgba(15, 61, 92, 0.08);
+  --overlay: rgba(15, 22, 30, 0.5);
+  --scrollbar-thumb: #c7ced4;
+  --focus-ring: rgba(15, 61, 92, 0.45);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --srb-blue: #1a6199;
+  --srb-blue-dark: #0d3350;
+  --srb-teal: #148f6c;
+  --srb-coral: #d9673e;
+  --srb-amber: #c88a2d;
+  --info: #1a6199;
+
+  /* Sur fond sombre, les teintes "ink" s'éclaircissent pour rester lisibles
+     (contraste texte/fond ≥ 4.5:1) sans reprendre la couleur solide, trop
+     sombre une fois posée sur --card / --bg. */
+  --srb-blue-ink: #7cb8ec;
+  --srb-teal-ink: #4fd6ab;
+  --srb-coral-ink: #f0916b;
+  --srb-amber-ink: #e6b95c;
+  --info-ink: #7cb8ec;
+
+  /* Teintes pastel : remplacées par des voiles translucides sombres plutôt
+     que des pastels clairs (qui "éblouiraient" en dark mode). */
+  --srb-teal-light: rgba(79, 214, 171, 0.14);
+  --srb-coral-light: rgba(240, 145, 107, 0.16);
+  --srb-amber-light: rgba(230, 185, 92, 0.16);
+  --info-light: rgba(124, 184, 236, 0.16);
+
+  --bg: #10161d;
+  --card: #1b232c;
+  --surface: #1b232c;
+  --surface-hover: #242e38;
+  --surface-muted: #202932;
+  --chip-neutral-bg: #2a333d;
+  --border: #2d3947;
+
+  --text: #edf1f4;
+  --text-mut: #a9b7c2;
+  --text-soft: #7c8b97;
+
+  --shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  --overlay: rgba(0, 0, 0, 0.65);
+  --scrollbar-thumb: #3a4854;
+  --focus-ring: rgba(124, 184, 236, 0.55);
 }
 
 * {
@@ -36,6 +123,23 @@ body {
   overflow-x: hidden;
 }
 
+/* Transition douce lors du basculement clair/sombre, désactivée pour les
+   personnes ayant demandé une réduction des animations (norme ergonomique
+   d'accessibilité — prefers-reduced-motion). */
+@media (prefers-reduced-motion: no-preference) {
+  body,
+  .card,
+  .kpi-card,
+  .btn,
+  .icon-btn,
+  .modal,
+  .sidebar,
+  th,
+  td {
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  }
+}
+
 select,
 input,
 textarea,
@@ -50,12 +154,26 @@ textarea {
   min-width: 0;
 }
 
+/* Indicateur de focus visible et cohérent au clavier (norme WCAG 2.4.7) :
+   remplace les contours par défaut, parfois invisibles selon le thème,
+   par un anneau à fort contraste identique sur les deux thèmes. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #c7ced4;
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
@@ -70,23 +188,23 @@ textarea {
 }
 .badge.green {
   background: var(--srb-teal-light);
-  color: var(--srb-teal);
+  color: var(--srb-teal-ink);
 }
 .badge.red {
   background: var(--srb-coral-light);
-  color: var(--srb-coral);
+  color: var(--srb-coral-ink);
 }
 .badge.amber {
   background: var(--srb-amber-light);
-  color: var(--srb-amber);
+  color: var(--srb-amber-ink);
 }
 .badge.gray {
-  background: #eef0f2;
+  background: var(--chip-neutral-bg);
   color: var(--text-mut);
 }
 .badge.blue {
-  background: #e6f1fb;
-  color: #185fa5;
+  background: var(--info-light);
+  color: var(--info-ink);
 }
 
 /* ---------- Classes visuelles communes aux modules (cf. maquette) ---------- */
@@ -117,7 +235,7 @@ textarea {
   padding: 0 14px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
@@ -129,7 +247,7 @@ textarea {
   transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
 }
 .btn:hover {
-  background: #f5f7f9;
+  background: var(--surface-hover);
   transform: translateY(-1px);
 }
 .btn.accent {
@@ -156,7 +274,8 @@ textarea {
   border-radius: 999px;
   padding: 0 12px 0 36px;
   font-size: 12.5px;
-  background: #fff;
+  background: var(--surface);
+  color: var(--text);
   box-shadow: var(--shadow);
 }
 .search-box i {
@@ -207,10 +326,10 @@ textarea {
   margin-top: 4px;
 }
 .delta.up {
-  color: var(--srb-teal);
+  color: var(--srb-teal-ink);
 }
 .delta.down {
-  color: var(--srb-coral);
+  color: var(--srb-coral-ink);
 }
 .icon-badge {
   width: 26px;
@@ -284,7 +403,7 @@ th {
   letter-spacing: 0.08em;
   padding: 10px 12px;
   border-bottom: 1px solid var(--border);
-  background: #f8fafc;
+  background: var(--surface-muted);
 }
 td {
   padding: 11px 12px;
@@ -295,7 +414,7 @@ tr:last-child td {
   border-bottom: none;
 }
 tr:hover td {
-  background: #fafcff;
+  background: var(--surface-hover);
 }
 
 .agent-cell {
@@ -307,8 +426,8 @@ tr:hover td {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #e6f1fb;
-  color: #185fa5;
+  background: var(--info-light);
+  color: var(--info-ink);
   font-size: 11px;
   font-weight: 600;
   display: flex;
@@ -340,7 +459,8 @@ tr:hover td {
   border-radius: 999px;
   padding: 0 12px;
   font-size: 12.5px;
-  background: #fff;
+  background: var(--surface);
+  color: var(--text);
   box-shadow: var(--shadow);
   width: auto;
 }
@@ -390,8 +510,8 @@ tr:hover td {
   font-weight: 500;
 }
 .tab.active {
-  color: var(--srb-blue);
-  border-bottom-color: var(--srb-blue);
+  color: var(--srb-blue-ink);
+  border-bottom-color: var(--srb-blue-ink);
 }
 
 .icon-btn {
@@ -399,7 +519,7 @@ tr:hover td {
   height: 32px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -409,7 +529,7 @@ tr:hover td {
   transition: transform 0.16s ease, background 0.16s ease;
 }
 .icon-btn:hover {
-  background: #f5f7f9;
+  background: var(--surface-hover);
   transform: translateY(-1px);
 }
 
@@ -440,11 +560,11 @@ tr:hover td {
 }
 .file-badge.pdf {
   background: var(--srb-coral-light);
-  color: var(--srb-coral);
+  color: var(--srb-coral-ink);
 }
 .file-badge.xls {
   background: var(--srb-teal-light);
-  color: var(--srb-teal);
+  color: var(--srb-teal-ink);
 }
 
 .avatar-sm {
@@ -504,10 +624,10 @@ tr:hover td {
   font-size: 14px;
 }
 .perm-line.on i {
-  color: var(--srb-teal);
+  color: var(--srb-teal-ink);
 }
 .perm-line:not(.on) i {
-  color: #d2d8de;
+  color: var(--text-soft);
 }
 
 .pagination {
@@ -538,7 +658,8 @@ tr:hover td {
   width: 30px;
   height: 30px;
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
+  color: var(--text);
   border-radius: 8px;
   font-size: 11.5px;
   cursor: pointer;
@@ -560,7 +681,7 @@ tr:hover td {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 22, 30, 0.5);
+  background: var(--overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -568,7 +689,8 @@ tr:hover td {
   z-index: 100;
 }
 .modal {
-  background: #fff;
+  background: var(--surface);
+  color: var(--text);
   border-radius: 10px;
   width: min(420px, 100%);
   max-width: 100%;
@@ -621,7 +743,7 @@ tr:hover td {
   border-radius: 7px;
   padding: 0 12px;
   font-size: 13.5px;
-  background: #fafbfc;
+  background: var(--surface-muted);
   color: var(--text);
   font-family: inherit;
 }
@@ -635,18 +757,18 @@ tr:hover td {
 .field select:focus,
 .field textarea:focus {
   outline: none;
-  border-color: var(--srb-blue);
-  background: #fff;
+  border-color: var(--srb-blue-ink);
+  background: var(--surface);
 }
 .field .erreur-champ {
-  color: var(--srb-coral);
+  color: var(--srb-coral-ink);
   font-size: 11.5px;
   margin-top: 4px;
 }
 
 .message-erreur {
   background: var(--srb-coral-light);
-  color: var(--srb-coral);
+  color: var(--srb-coral-ink);
   font-size: 12px;
   padding: 8px 10px;
   border-radius: 7px;
@@ -654,7 +776,7 @@ tr:hover td {
 }
 .message-info {
   background: var(--srb-teal-light);
-  color: var(--srb-teal);
+  color: var(--srb-teal-ink);
   font-size: 12px;
   padding: 8px 10px;
   border-radius: 7px;

@@ -31,8 +31,8 @@
 
 .login-card {
   width: 100%;
-  background: rgba(255, 255, 255, 0.97);
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: color-mix(in srgb, var(--card) 96%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card) 55%, transparent);
   border-radius: 24px;
   padding: 2rem 1.5rem;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
@@ -57,7 +57,7 @@
 
 .eyebrow {
   margin: 0 0 0.2rem;
-  color: var(--srb-blue);
+  color: var(--srb-blue-ink);
   font-size: 0.76rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -116,7 +116,7 @@ label {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 0 0.95rem 0 2.7rem;
-  background: #f7fbff;
+  background: var(--surface-muted);
   color: var(--text);
   font-size: 0.94rem;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
@@ -124,9 +124,9 @@ label {
 
 .input-with-icon input:focus {
   outline: none;
-  border-color: var(--srb-blue);
-  background: #fff;
-  box-shadow: 0 0 0 4px rgba(15, 61, 92, 0.11);
+  border-color: var(--srb-blue-ink);
+  background: var(--surface);
+  box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
 .btn-primary,
@@ -176,7 +176,7 @@ label {
 }
 
 .login-links a {
-  color: var(--srb-blue);
+  color: var(--srb-blue-ink);
   text-decoration: none;
   cursor: pointer;
   font-size: 0.86rem;
@@ -211,7 +211,7 @@ label {
 
 .btn-google {
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
   box-shadow: 0 8px 22px rgba(15, 61, 92, 0.08);
 }
@@ -243,13 +243,13 @@ label {
 }
 
 .message-info {
-  color: var(--srb-blue, #1a5fb4);
-  background: rgba(26, 95, 180, 0.08);
+  color: var(--srb-blue-ink);
+  background: var(--info-light);
 }
 
 .message-erreur {
-  color: var(--srb-coral);
-  background: rgba(216, 90, 48, 0.09);
+  color: var(--srb-coral-ink);
+  background: var(--srb-coral-light);
 }
 
 @media (max-width: 576px) {

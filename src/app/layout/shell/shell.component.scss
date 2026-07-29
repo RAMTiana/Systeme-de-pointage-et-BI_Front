@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: 250px minmax(0, 1fr);
   min-height: 100vh;
-  background: linear-gradient(180deg, #f4f7fb 0%, #eef4f9 100%);
+  background: var(--bg);
   position: relative;
 }
 
@@ -11,12 +11,13 @@
 }
 
 .sidebar {
-  background: linear-gradient(180deg, var(--srb-blue-dark) 0%, #0b2538 100%);
-  color: #cfe0ea;
+  background: var(--surface);
+  color: var(--text-mut);
   padding: 18px 12px;
   display: flex;
   flex-direction: column;
-  box-shadow: 8px 0 30px rgba(7, 24, 38, 0.12);
+  border-right: 1px solid var(--border);
+  box-shadow: var(--shadow);
   min-height: 100vh;
   position: sticky;
   top: 0;
@@ -28,7 +29,7 @@
   align-items: center;
   gap: 10px;
   padding: 6px 8px 18px;
-  color: #fff;
+  color: var(--text);
 }
 .brand .mark {
   width: 42px;
@@ -46,7 +47,7 @@
 .brand .txt span {
   display: block;
   font-size: 10.5px;
-  color: #9db4c4;
+  color: var(--text-soft);
   font-weight: 400;
   margin-top: 2px;
 }
@@ -58,7 +59,7 @@
   padding: 10px 12px;
   border-radius: 12px;
   font-size: 13px;
-  color: #b9cbd8;
+  color: var(--text-mut);
   cursor: pointer;
   margin-bottom: 4px;
   text-decoration: none;
@@ -70,8 +71,8 @@
   text-align: center;
 }
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: var(--surface-hover);
+  color: var(--text);
   transform: translateX(2px);
 }
 .nav-item.active {
@@ -85,14 +86,14 @@
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #6f889a;
+  color: var(--text-soft);
   margin: 16px 10px 8px;
 }
 
 .sidebar-foot {
   margin-top: auto;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
   gap: 9px;
@@ -113,14 +114,14 @@
 }
 .sidebar-foot .who {
   font-size: 12px;
-  color: #fff;
+  color: var(--text);
   font-weight: 600;
   line-height: 1.35;
 }
 .sidebar-foot .who span {
   display: block;
   font-size: 10.5px;
-  color: #9db4c4;
+  color: var(--text-soft);
   font-weight: 400;
 }
 
@@ -132,10 +133,10 @@
   width: 100%;
   margin-top: 10px;
   padding: 10px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #cfe0ea;
+  background: var(--surface-hover);
+  color: var(--text-mut);
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
@@ -145,9 +146,9 @@
   font-size: 15px;
 }
 .btn-deconnexion:hover {
-  background: rgba(220, 60, 60, 0.16);
-  border-color: rgba(220, 60, 60, 0.4);
-  color: #ff8a8a;
+  background: var(--srb-coral-light);
+  border-color: var(--srb-coral-ink);
+  color: var(--srb-coral-ink);
   transform: translateY(-1px);
 }
 
@@ -159,8 +160,8 @@
   height: 42px;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: #fff;
-  color: var(--srb-blue);
+  background: var(--surface);
+  color: var(--srb-blue-ink);
   box-shadow: var(--shadow);
   margin-bottom: 12px;
   cursor: pointer;
@@ -181,7 +182,7 @@
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(5, 15, 24, 0.54);
+    background: var(--overlay);
     z-index: 20;
     opacity: 0;
     pointer-events: none;

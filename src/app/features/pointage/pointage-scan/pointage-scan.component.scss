@@ -10,7 +10,7 @@
   padding: 12px 14px;
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
@@ -26,7 +26,7 @@
   font-size: 16px;
 }
 .mode-tab:hover {
-  background: #f5f7f9;
+  background: var(--surface-hover);
   transform: translateY(-1px);
 }
 .mode-tab.active {
@@ -105,12 +105,13 @@
   border-radius: 10px;
   padding: 0 12px;
   font-size: 13px;
-  background: #fff;
+  background: var(--surface);
+  color: var(--text);
 }
 
 .msg-ok {
   border-color: var(--srb-teal);
-  color: var(--srb-teal);
+  color: var(--srb-teal-ink);
   margin-bottom: 12px;
   display: flex;
   gap: 8px;
@@ -118,7 +119,7 @@
 }
 .msg-err {
   border-color: var(--srb-coral);
-  color: var(--srb-coral);
+  color: var(--srb-coral-ink);
   margin-bottom: 12px;
   display: flex;
   gap: 8px;
@@ -136,7 +137,7 @@
   color: var(--text-mut);
 }
 .info-card .tips i {
-  color: var(--srb-teal);
+  color: var(--srb-teal-ink);
   margin-right: 6px;
 }
 
@@ -163,7 +164,7 @@
   padding: 8px 12px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   cursor: pointer;
   font-size: 12.5px;
   font-weight: 600;
@@ -171,7 +172,7 @@
   transition: all 0.16s ease;
 }
 .motif-chip:hover {
-  background: #f5f7f9;
+  background: var(--surface-hover);
 }
 .motif-chip.active {
   background: linear-gradient(135deg, var(--srb-blue) 0%, #135f8b 100%);
@@ -182,7 +183,7 @@
 .capture-auto-progress {
   height: 6px;
   border-radius: 999px;
-  background: #eef1f4;
+  background: var(--chip-neutral-bg);
   overflow: hidden;
   margin: 10px 0 4px;
 }

@@ -9,7 +9,7 @@
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   box-shadow: var(--shadow);
   cursor: pointer;
 }
@@ -52,7 +52,7 @@
   border-left: 4px solid var(--text-soft);
   border-radius: 12px;
   padding: 13px 14px;
-  background: #fafbfc;
+  background: var(--surface-muted);
 }
 
 .decision-card-head {
@@ -70,7 +70,7 @@
   align-items: center;
   justify-content: center;
   font-size: 15px;
-  background: #eef0f2;
+  background: var(--chip-neutral-bg);
   color: var(--text-mut);
 }
 
@@ -81,7 +81,7 @@
   letter-spacing: 0.05em;
   padding: 3px 9px;
   border-radius: 20px;
-  background: #eef0f2;
+  background: var(--chip-neutral-bg);
   color: var(--text-mut);
 }
 
@@ -120,8 +120,8 @@
   background: var(--srb-coral-light);
 }
 .decision-card.niveau-critique .decision-icon {
-  background: #fff;
-  color: var(--srb-coral);
+  background: var(--surface);
+  color: var(--srb-coral-ink);
 }
 .decision-card.niveau-critique .decision-badge {
   background: var(--srb-coral);
@@ -133,8 +133,8 @@
   background: var(--srb-amber-light);
 }
 .decision-card.niveau-attention .decision-icon {
-  background: #fff;
-  color: var(--srb-amber);
+  background: var(--surface);
+  color: var(--srb-amber-ink);
 }
 .decision-card.niveau-attention .decision-badge {
   background: var(--srb-amber);
@@ -146,8 +146,8 @@
   background: var(--srb-teal-light);
 }
 .decision-card.niveau-positif .decision-icon {
-  background: #fff;
-  color: var(--srb-teal);
+  background: var(--surface);
+  color: var(--srb-teal-ink);
 }
 .decision-card.niveau-positif .decision-badge {
   background: var(--srb-teal);
@@ -155,14 +155,14 @@
 }
 
 .decision-card.niveau-info {
-  border-left-color: #185fa5;
-  background: #e6f1fb;
+  border-left-color: var(--info-ink);
+  background: var(--info-light);
 }
 .decision-card.niveau-info .decision-icon {
-  background: #fff;
-  color: #185fa5;
+  background: var(--surface);
+  color: var(--info-ink);
 }
 .decision-card.niveau-info .decision-badge {
-  background: #185fa5;
+  background: var(--info);
   color: #fff;
 }

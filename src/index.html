@@ -5,9 +5,26 @@
   <title>SRB Haute Matsiatra — Pointage &amp; BI</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
   <link rel="icon" type="image/x-icon" href="logo-srb.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    // Applique le thème (clair/sombre) avant le rendu de la page pour
+    // éviter tout flash de contenu non stylé (FOUC) : lit la préférence
+    // mémorisée, sinon respecte la préférence système de l'utilisateur.
+    (function () {
+      try {
+        var stocke = localStorage.getItem('srb-theme');
+        var theme = stocke === 'light' || stocke === 'dark'
+          ? stocke
+          : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>
