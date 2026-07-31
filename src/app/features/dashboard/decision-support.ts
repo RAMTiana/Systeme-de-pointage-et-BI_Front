@@ -246,8 +246,24 @@ export function calculerRecommandations(donnees: {
   }
 
   // 5. Agent le plus ponctuel du classement (valorisation positive)
-  if (classement.length > 0 && classement[0].nombre_retards === 0) {
-    const agent = classement[0];
+  // Un agent en retard n'a pas sa place dans « Ponctualité exemplaire » :
+  // on ne se contente donc pas de regarder la tête du classement (qui est
+  // trié par taux de présence), on cherche le premier agent qui remplit
+  // TOUTES les conditions d'exemplarité :
+  //   - aucun retard enregistré sur la période analysée ;
+  //   - au moins un jour réellement pointé (un agent qui n'a jamais pointé
+  //     n'a mécaniquement aucun retard, sans être exemplaire pour autant) ;
+  //   - aucun retard constaté sur le jour affiché (tableau temps réel) ;
+  //   - aucun retard répété relevé dans la semaine en cours.
+  const idsRetardataires = new Set<number>([
+    ...(tempsReel?.agents_retardataires ?? []).map((a) => a.id_agent),
+    ...(anomaliesRetardSemaine ?? []).map((a) => a.id_agent),
+  ]);
+  const agentExemplaire = classement.find(
+    (a) => a.nombre_retards === 0 && a.jours_pointes > 0 && !idsRetardataires.has(a.id_agent)
+  );
+  if (agentExemplaire) {
+    const agent = agentExemplaire;
     recommandations.push({
       id: 'agent-exemplaire',
       niveau: 'positif',

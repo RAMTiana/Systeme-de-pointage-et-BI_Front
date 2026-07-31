@@ -48,6 +48,19 @@ const LIBELLE_FENETRE_TENDANCE: Record<TypePeriode, string> = {
   annee: '5 dernières années',
 };
 
+/**
+ * Profondeur d'historique demandée au modèle prédictif selon la granularité.
+ * Le backend l'élargit automatiquement si trop de périodes sont vides et la
+ * plafonne si elle est trop large : ces valeurs sont un point de départ
+ * cohérent avec la fenêtre affichée, pas une contrainte rigide.
+ */
+const HISTORIQUE_PREVISION: Record<TypePeriode, number> = {
+  jour: 24,
+  semaine: 12,
+  mois: 12,
+  annee: 5,
+};
+
 const LIBELLE_PERIODE_COURANTE: Record<TypePeriode, string> = {
   jour: 'ce jour',
   semaine: 'cette semaine',
@@ -55,13 +68,34 @@ const LIBELLE_PERIODE_COURANTE: Record<TypePeriode, string> = {
   annee: 'cette année',
 };
 
+/**
+ * Sérialise une date en ISO (AAAA-MM-JJ) d'après ses composantes LOCALES.
+ *
+ * `date.toISOString()` convertit d'abord en UTC : pour un fuseau horaire en
+ * avance sur UTC (ex. Madagascar, UTC+3), les heures entre 00h00 et 03h00
+ * locales tombent encore sur la veille en UTC, ce qui envoyait au backend
+ * la mauvaise date pour "aujourd'hui" (jour du tableau de bord temps réel,
+ * bornes de période, fenêtre de tendance...) — d'où, entre autres, la liste
+ * "Agents en retard aujourd'hui" qui pouvait rester vide alors que des
+ * retards existaient bien pour la date locale réelle.
+ */
 function formatDateISO(date: Date): string {
-  return date.toISOString().slice(0, 10);
+  const annee = date.getFullYear();
+  const mois = `${date.getMonth() + 1}`.padStart(2, '0');
+  const jour = `${date.getDate()}`.padStart(2, '0');
+  return `${annee}-${mois}-${jour}`;
 }
 
-function formatDateCourte(iso: string): string {
-  const [, mois, jour] = iso.split('-');
-  return `${jour}/${mois}`;
+function formatDateCourte(iso: string, granularite: TypePeriode = 'jour'): string {
+  const [annee, mois, jour] = iso.split('-');
+  switch (granularite) {
+    case 'annee':
+      return annee;
+    case 'mois':
+      return `${mois}/${annee.slice(2)}`;
+    default:
+      return `${jour}/${mois}`;
+  }
 }
 
 function formatDateAffichage(iso: string): string {
@@ -80,6 +114,32 @@ function lundiDeSemaine(date: Date): Date {
   const decalage = (d.getDay() + 6) % 7; // 0 = lundi ... 6 = dimanche
   d.setDate(d.getDate() - decalage);
   return d;
+}
+
+/**
+ * Décale une date de `delta` mois sans le débordement de `Date.setMonth()`.
+ *
+ * `new Date(2025, 2, 31).setMonth(1)` bascule sur le 3 mars (février n'a pas
+ * de 31) : la fenêtre « 12 derniers mois » sautait donc un mois dès que la
+ * date de référence tombait le 29, 30 ou 31. On borne ici le jour au dernier
+ * jour du mois cible.
+ */
+function ajouterMois(date: Date, delta: number): Date {
+  const d = debutDeJournee(date);
+  const cible = new Date(d.getFullYear(), d.getMonth() + delta, 1);
+  const dernierJourCible = new Date(cible.getFullYear(), cible.getMonth() + 1, 0).getDate();
+  cible.setDate(Math.min(d.getDate(), dernierJourCible));
+  return cible;
+}
+
+/** Premier jour du mois d'une date. */
+function premierJourDuMois(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+/** Dernier jour du mois d'une date. */
+function dernierJourDuMois(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
 }
 
 /** Bornes de la période sélectionnée — même convention que `bornes_periode` côté backend. */
@@ -110,24 +170,30 @@ function bornesPeriode(periode: TypePeriode, reference: Date): { debut: Date; fi
 
 /** Fenêtre glissante affichée sur les graphiques de tendance/prévision, avec la granularité assortie. */
 function fenetreTendance(periode: TypePeriode, reference: Date): { debut: Date; fin: Date; granularite: TypePeriode } {
-  const fin = debutDeJournee(reference);
-  const debut = new Date(fin);
+  const ref = debutDeJournee(reference);
   switch (periode) {
-    case 'jour':
+    case 'jour': {
+      const debut = new Date(ref);
       debut.setDate(debut.getDate() - 29);
-      break;
-    case 'semaine':
-      debut.setDate(debut.getDate() - 7 * 11);
-      break;
-    case 'mois':
-      debut.setMonth(debut.getMonth() - 11);
-      break;
+      return { debut, fin: ref, granularite: periode };
+    }
+    case 'semaine': {
+      const debut = lundiDeSemaine(new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() - 7 * 11));
+      return { debut, fin: ref, granularite: periode };
+    }
+    case 'mois': {
+      // Fenêtre alignée sur des mois complets : on part du 1er du mois situé
+      // 11 mois avant le mois de référence (sans débordement de calendrier),
+      // pour obtenir exactement 12 points mensuels.
+      const debut = premierJourDuMois(ajouterMois(ref, -11));
+      return { debut, fin: ref, granularite: periode };
+    }
     case 'annee':
-    default:
-      debut.setFullYear(debut.getFullYear() - 4);
-      break;
+    default: {
+      const debut = new Date(ref.getFullYear() - 4, 0, 1);
+      return { debut, fin: ref, granularite: 'annee' };
+    }
   }
-  return { debut, fin, granularite: periode };
 }
 
 @Component({
@@ -152,6 +218,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly periode = signal<TypePeriode>('mois');
   readonly dateReferenceISO = signal(formatDateISO(new Date()));
   readonly dateMaxISO = formatDateISO(new Date());
+  readonly moisMaxISO = formatDateISO(new Date()).slice(0, 7);
+
+  /** Valeur du sélecteur de mois (AAAA-MM) dérivée de la date de référence. */
+  readonly moisReferenceISO = computed(() => this.dateReferenceISO().slice(0, 7));
+  readonly estFiltreMensuel = computed(() => this.periode() === 'mois');
 
   readonly libellePeriode = computed(() => LIBELLE_PERIODE[this.periode()]);
   readonly libelleFenetreTendance = computed(() => LIBELLE_FENETRE_TENDANCE[this.periode()]);
@@ -216,6 +287,37 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.chargerTableauDeBord();
   }
 
+  /**
+   * Sélection d'un mois entier (filtre « Mois ») : la date de référence est
+   * positionnée sur le dernier jour du mois choisi — jamais dans le futur —
+   * de sorte que le mois sélectionné soit analysé en entier et non arrêté au
+   * jour arbitraire qu'affichait le sélecteur de date auparavant.
+   */
+  surChangementMois(nouveauMoisISO: string): void {
+    if (!nouveauMoisISO) return;
+    const [annee, mois] = nouveauMoisISO.split('-').map(Number);
+    if (!annee || !mois) return;
+    const aujourdHui = debutDeJournee(new Date());
+    const finDuMois = new Date(annee, mois, 0);
+    const reference = finDuMois > aujourdHui ? aujourdHui : finDuMois;
+    this.dateReferenceISO.set(formatDateISO(reference));
+    this.chargerTableauDeBord();
+  }
+
+  /**
+   * Changement de granularité : en passant sur « Mois », on recale la date de
+   * référence sur la fin du mois affiché (bornée à aujourd'hui) pour que les
+   * indicateurs couvrent bien le mois complet dès le premier affichage.
+   */
+  surChangementPeriode(nouvellePeriode: TypePeriode): void {
+    this.periode.set(nouvellePeriode);
+    if (nouvellePeriode === 'mois') {
+      this.surChangementMois(this.moisReferenceISO());
+      return;
+    }
+    this.chargerTableauDeBord();
+  }
+
   allerAujourdHui(): void {
     if (this.estAujourdHui()) return;
     this.dateReferenceISO.set(this.dateMaxISO);
@@ -232,7 +334,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     const reference = new Date(`${refISO}T00:00:00`);
 
     const { debut: debutPeriode, fin: finPeriode } = bornesPeriode(periode, reference);
-    const { debut: debutTendance, granularite } = fenetreTendance(periode, reference);
+    const { debut: debutTendance, fin: finTendance, granularite } = fenetreTendance(periode, reference);
 
     // Avertissement "retards consécutifs" : toujours basé sur la semaine
     // civile en cours (aujourd'hui), indépendamment de la date affichée par
@@ -242,7 +344,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     forkJoin({
       tempsReel: this.biService.tempsReel(idService, refISO),
-      tendances: this.biService.tendances(formatDateISO(debutTendance), refISO, granularite, idService),
+      // Borne haute de la fenêtre de tendance : fin de la période courante
+      // (bornée à la date de référence) — un mois partiel reste ainsi le
+      // dernier point, sans jamais tronquer les mois précédents.
+      tendances: this.biService.tendances(formatDateISO(debutTendance), formatDateISO(finTendance), granularite, idService),
       comparaison: this.biService.comparaisonServices(periode, refISO),
       classement: this.biService.classement(
         formatDateISO(debutPeriode),
@@ -258,7 +363,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         5,
         idService
       ),
-      prevision: this.biService.prevision(periode, idService, 6, 3, refISO),
+      // Variante ML (gradient boosting) : l'historique est calibré côté
+      // backend — élargi s'il est trop pauvre, tronqué s'il est trop long —
+      // avec repli statistique automatique signalé par le champ `methode`.
+      prevision: this.biService.previsionMl(periode, idService, HISTORIQUE_PREVISION[periode], 3, refISO),
       anomaliesMl: this.biService.anomaliesMl(periode, idService, refISO),
       scoreRisque: this.biService.scoreRisque(idService, 7, refISO),
       anomaliesRetardSemaine: this.anomalieService
@@ -329,7 +437,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        y: { min: 0, max: 100, grid: { color: GRIS_GRILLE }, ticks: { font: { size: 10.5 } } },
+        y: {
+          min: 0,
+          max: 100,
+          grid: { color: GRIS_GRILLE },
+          ticks: { font: { size: 10.5 }, callback: (valeur) => `${valeur}%` },
+        },
         x: { grid: { display: false }, ticks: { font: { size: 10.5 } } },
       },
     };
@@ -339,8 +452,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.canvasTendance) return;
     this.graphiqueTendance?.destroy();
 
-    const labels = this.tendances.map((p) => formatDateCourte(p.periode_debut));
-    const donnees = this.tendances.map((p) => p.globaux.taux_presence ?? 0);
+    const labels = this.tendances.map((p) => formatDateCourte(p.periode_debut, this.periode()));
+    const donnees = this.tendances.map((p) => (p.globaux.taux_presence ?? 0) * 100);
 
     this.graphiqueTendance = new Chart(this.canvasTendance.nativeElement, {
       type: 'line',
@@ -373,7 +486,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         labels: services.map((s) => s.nom_service),
         datasets: [
           {
-            data: services.map((s) => s.taux_presence ?? 0),
+            data: services.map((s) => (s.taux_presence ?? 0) * 100),
             backgroundColor: services.map((_, i) => PALETTE_SERVICES[i % PALETTE_SERVICES.length]),
             borderRadius: 5,
             maxBarThickness: 38,
@@ -391,15 +504,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     const historique = this.prevision.historique;
     const previsionPoints = this.prevision.prevision;
     const labels = [
-      ...historique.map((p) => formatDateCourte(p.periode_debut)),
-      ...previsionPoints.map((p) => formatDateCourte(p.periode_debut) + '*'),
+      ...historique.map((p) => formatDateCourte(p.periode_debut, this.periode())),
+      ...previsionPoints.map((p) => formatDateCourte(p.periode_debut, this.periode()) + '*'),
     ];
 
-    const donneesHistorique: (number | null)[] = historique.map((p) => p.globaux.taux_presence ?? 0);
+    const donneesHistorique: (number | null)[] = historique.map((p) => (p.globaux.taux_presence ?? 0) * 100);
     const donneesPrevision: (number | null)[] = [
       ...new Array(Math.max(historique.length - 1, 0)).fill(null),
       ...(historique.length ? [donneesHistorique[donneesHistorique.length - 1]] : []),
-      ...previsionPoints.map((p) => p.taux_presence_estime ?? null),
+      ...previsionPoints.map((p) => (p.taux_presence_estime !== null ? p.taux_presence_estime * 100 : null)),
     ];
     const donneesHistoriquePadding: (number | null)[] = [
       ...donneesHistorique,
@@ -438,7 +551,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.canvasAbsencesRetards) return;
     this.graphiqueAbsencesRetards?.destroy();
 
-    const labels = this.tendances.map((p) => formatDateCourte(p.periode_debut));
+    const labels = this.tendances.map((p) => formatDateCourte(p.periode_debut, this.periode()));
     const tauxAbsence = this.tendances.map((p) =>
       p.globaux.jours_ouvres > 0 ? Math.round((p.globaux.nombre_absences / p.globaux.jours_ouvres) * 1000) / 10 : 0
     );

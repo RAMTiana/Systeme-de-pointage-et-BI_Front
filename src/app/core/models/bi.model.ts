@@ -54,6 +54,10 @@ export interface ClassementAgentOut {
   nom_service: string;
   jours_ouvres: number;
   jours_presents: number;
+  /** Jours de la période où l'agent a réellement enregistré un pointage. */
+  jours_pointes: number;
+  /** Jours ouvrés de la période couverts par un congé actif (exclus du dénominateur). */
+  jours_conge: number;
   nombre_retards: number;
   nombre_absences: number;
   nombre_departs_anticipes: number;

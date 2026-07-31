@@ -7,19 +7,28 @@
         <option [ngValue]="service.id_service">{{ service.nom_service }}</option>
       }
     </select>
-    <select [ngModel]="periode()" (ngModelChange)="periode.set($event); surChangementFiltre()">
+    <select [ngModel]="periode()" (ngModelChange)="surChangementPeriode($event)">
       @for (p of periodes; track p) {
         <option [ngValue]="p">{{ p === 'jour' ? 'Jour' : p === 'semaine' ? 'Semaine' : p === 'mois' ? 'Mois' : 'Année' }}</option>
       }
     </select>
     <label class="date-filter">
       <i class="ti ti-calendar"></i>
-      <input
-        type="date"
-        [ngModel]="dateReferenceISO()"
-        [max]="dateMaxISO"
-        (ngModelChange)="surChangementDate($event)"
-      />
+      @if (estFiltreMensuel()) {
+        <input
+          type="month"
+          [ngModel]="moisReferenceISO()"
+          [max]="moisMaxISO"
+          (ngModelChange)="surChangementMois($event)"
+        />
+      } @else {
+        <input
+          type="date"
+          [ngModel]="dateReferenceISO()"
+          [max]="dateMaxISO"
+          (ngModelChange)="surChangementDate($event)"
+        />
+      }
     </label>
     @if (!estAujourdHui()) {
       <button class="btn" (click)="allerAujourdHui()"><i class="ti ti-rotate-clockwise"></i> Aujourd'hui</button>
@@ -70,7 +79,7 @@
         Taux de présence
         <div class="icon-badge" style="background: #e6f1fb; color: #185fa5"><i class="ti ti-percentage"></i></div>
       </div>
-      <div class="val">{{ tr.taux_presence !== null ? (tr.taux_presence | number: '1.1-1') + '%' : '—' }}</div>
+      <div class="val">{{ tr.taux_presence !== null ? (tr.taux_presence * 100 | number: '1.1-1') + '%' : '—' }}</div>
     </div>
   </div>
 
@@ -164,7 +173,7 @@
   <div class="row-2">
     <div class="card">
       <h3>Classement — ponctualité</h3>
-      <p class="sub">Agents les plus ponctuels — {{ libellePeriodeCourante() }}</p>
+      <p class="sub">Agents les plus ponctuels — {{ libellePeriodeCourante() }} (aucun retard sur la période)</p>
       @if (classement().length) {
         <table>
           <tr>
@@ -193,7 +202,7 @@
     </div>
     <div class="card">
       <h3>Prévision — taux de ponctualité</h3>
-      <p class="sub">Estimation indicative par {{ libellePeriode().toLowerCase() }} (régression simple)</p>
+      <p class="sub">Estimation indicative par {{ libellePeriode().toLowerCase() }} — modèle prédictif (IA)</p>
       <div style="height: 170px"><canvas #canvasPrevision></canvas></div>
       <p class="empty-hint">
         <i class="ti ti-info-circle"></i> Estimation indicative fondée sur l'historique récent, à confirmer par
