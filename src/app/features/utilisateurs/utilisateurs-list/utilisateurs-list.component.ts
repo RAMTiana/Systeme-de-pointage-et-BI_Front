@@ -294,6 +294,8 @@ export class UtilisateursListComponent implements OnInit, OnDestroy {
       generer_rapports: 'Générer les rapports',
       consulter_bi: 'Consulter le BI',
       valider_roles: 'Valider les rôles',
+      gerer_conges: 'Gérer les congés',
+      gerer_absences: 'Gérer les absences',
     };
     return libelles[permission.nom_permission] ?? permission.nom_permission.replace(/_/g, ' ');
   }

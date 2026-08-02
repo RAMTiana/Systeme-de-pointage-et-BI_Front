@@ -38,6 +38,7 @@ export class ShellComponent {
         { lien: '/divisions', icone: 'ti-building', libelle: 'Divisions' },
         { lien: '/pointage', icone: 'ti-clock', libelle: 'Pointage' },
         { lien: '/anomalies', icone: 'ti-alert-triangle', libelle: 'Anomalies' },
+        { lien: '/absences', icone: 'ti-user-off', libelle: 'Absences' },
         { lien: '/conges', icone: 'ti-plane-departure', libelle: 'Congés' },
         { lien: '/rapports', icone: 'ti-file-report', libelle: 'Rapports' },
       ],
