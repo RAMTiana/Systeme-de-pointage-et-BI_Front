@@ -1,11 +1,31 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, NgZone, inject, signal, viewChild } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/services/auth.service';
+
+/**
+ * Reflète en front la politique de mot de passe appliquée côté backend
+ * (app/core/password_policy.py) : 12 caractères min, minuscule, majuscule,
+ * chiffre, caractère spécial, pas d'espace en début/fin. Garder ces deux
+ * politiques synchronisées si l'une des deux est modifiée.
+ */
+function politiqueMotDePasseValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const valeur: string = control.value ?? '';
+    const erreurs: ValidationErrors = {};
+    if (valeur.length < 12) erreurs['longueur'] = true;
+    if (!/[a-z]/.test(valeur)) erreurs['minuscule'] = true;
+    if (!/[A-Z]/.test(valeur)) erreurs['majuscule'] = true;
+    if (!/\d/.test(valeur)) erreurs['chiffre'] = true;
+    if (!/[^A-Za-z0-9]/.test(valeur)) erreurs['special'] = true;
+    if (valeur !== valeur.trim()) erreurs['espaces'] = true;
+    return Object.keys(erreurs).length > 0 ? erreurs : null;
+  };
+}
 
 /**
  * Typage minimal de la partie de l'API Google Identity Services utilisée ici
@@ -64,9 +84,25 @@ export class LoginComponent implements AfterViewInit {
 
   readonly formulaireCode = this.fb.nonNullable.group({
     code: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(6)]],
-    nouveauMotDePasse: ['', [Validators.required, Validators.minLength(8)]],
+    nouveauMotDePasse: ['', [Validators.required, politiqueMotDePasseValidator()]],
     confirmationMotDePasse: ['', Validators.required],
   });
+
+  /** Checklist affichée sous le champ "Nouveau mot de passe", mise à jour à chaque frappe. */
+  get reglesMotDePasse(): { label: string; valide: boolean }[] {
+    const valeur: string = this.formulaireCode.get('nouveauMotDePasse')?.value ?? '';
+    return [
+      { label: 'Au moins 12 caractères', valide: valeur.length >= 12 },
+      { label: 'Une lettre minuscule', valide: /[a-z]/.test(valeur) },
+      { label: 'Une lettre majuscule', valide: /[A-Z]/.test(valeur) },
+      { label: 'Un chiffre', valide: /\d/.test(valeur) },
+      { label: 'Un caractère spécial', valide: /[^A-Za-z0-9]/.test(valeur) },
+    ];
+  }
+
+  get nombreReglesValidees(): number {
+    return this.reglesMotDePasse.filter((r) => r.valide).length;
+  }
 
   ngAfterViewInit(): void {
     if (!environment.googleClientId) {
@@ -219,11 +255,18 @@ export class LoginComponent implements AfterViewInit {
           this.etapeReinitialisation.set('terminee');
         },
         error: (err) => {
-          this.erreurReinitialisation.set(
-            err.status === 400
-              ? 'Code invalide, expiré, ou identifiant incorrect. Vérifiez votre e-mail ou redemandez un code.'
-              : 'Réinitialisation impossible pour le moment. Réessayez plus tard.'
-          );
+          if (err.status === 422 && typeof err.error?.detail === 'string') {
+            // Le backend renvoie le détail exact de la politique de mot de
+            // passe non respectée (app/core/password_policy.py) : on l'affiche
+            // tel quel plutôt qu'un message générique.
+            this.erreurReinitialisation.set(err.error.detail);
+          } else if (err.status === 400) {
+            this.erreurReinitialisation.set(
+              'Code invalide, expiré, ou identifiant incorrect. Vérifiez votre e-mail ou redemandez un code.'
+            );
+          } else {
+            this.erreurReinitialisation.set('Réinitialisation impossible pour le moment. Réessayez plus tard.');
+          }
         },
       });
   }
