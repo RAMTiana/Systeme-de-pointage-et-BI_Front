@@ -1,0 +1,108 @@
+/* Modales et surcouches — extrait de styles.scss (limite de 500 lignes par fichier). */
+/* ---------- Modales ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+.modal {
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 10px;
+  width: min(420px, 100%);
+  max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 20px;
+}
+@media (max-width: 640px) {
+  .modal-overlay {
+    padding: 12px;
+  }
+  .modal {
+    width: 100%;
+    padding: 16px;
+  }
+}
+.modal h3 {
+  font-size: 15px;
+  font-weight: 500;
+  margin: 0 0 4px;
+}
+.modal p.sub {
+  font-size: 12px;
+  color: var(--text-mut);
+  margin: 0 0 16px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.field {
+  margin-bottom: 1rem;
+}
+.field label {
+  display: block;
+  font-size: 12.5px;
+  color: var(--text-mut);
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 0 12px;
+  font-size: 13.5px;
+  background: var(--surface-muted);
+  color: var(--text);
+  font-family: inherit;
+}
+.field textarea {
+  height: auto;
+  min-height: 70px;
+  padding: 9px 11px;
+  resize: vertical;
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--srb-blue-ink);
+  background: var(--surface);
+}
+.field .erreur-champ {
+  color: var(--srb-coral-ink);
+  font-size: 11.5px;
+  margin-top: 4px;
+}
+
+.message-erreur {
+  background: var(--srb-coral-light);
+  color: var(--srb-coral-ink);
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  margin-bottom: 12px;
+}
+.message-info {
+  background: var(--srb-teal-light);
+  color: var(--srb-teal-ink);
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  margin-bottom: 12px;
+}
+
+
