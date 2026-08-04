@@ -42,6 +42,12 @@ export const LIBELLE_PERIODE_COURANTE: Record<TypePeriode, string> = {
   annee: 'cette année',
 };
 
+/** Noms complets des mois en français, pour l'affichage sur l'axe des graphiques en granularité « Mois ». */
+const NOMS_MOIS: readonly string[] = [
+  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+];
+
 /**
  * Sérialise une date en ISO (AAAA-MM-JJ) d'après ses composantes LOCALES.
  *
@@ -66,7 +72,11 @@ export function formatDateCourte(iso: string, granularite: TypePeriode = 'jour')
     case 'annee':
       return annee;
     case 'mois':
-      return `${mois}/${annee.slice(2)}`;
+      // Fenêtre de 12 mois glissants : chaque mois de la fenêtre est unique,
+      // même si elle chevauche deux années civiles (ex. sept. 2025 → août
+      // 2026) — le nom complet du mois suffit donc à lever toute ambiguïté,
+      // sans avoir besoin d'accoler l'année comme pour "06/26" auparavant.
+      return NOMS_MOIS[Number(mois) - 1] ?? `${mois}/${annee.slice(2)}`;
     default:
       return `${jour}/${mois}`;
   }

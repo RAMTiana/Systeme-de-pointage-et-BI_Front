@@ -3,10 +3,13 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
+  Injector,
   OnDestroy,
   OnInit,
   ViewChild,
+  afterNextRender,
   computed,
+  inject,
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -100,6 +103,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private graphiqueAbsencesRetards?: Chart;
 
   private vueInitialisee = false;
+  private readonly injector = inject(Injector);
 
   constructor(
     private readonly biService: BiService,
@@ -263,7 +267,19 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
               anomaliesAbsenceSemaine: resultats.anomaliesAbsenceSemaine,
             })
           );
-          this.dessinerGraphiquesSiPossible();
+          // `afterNextRender` (plutôt qu'un simple `setTimeout`) : attend que
+          // Angular ait réellement terminé de ré-appliquer le template après
+          // le `.set(...)` des signaux ci-dessus, avant de chercher les
+          // `<canvas>` via `@ViewChild`. Nécessaire car ces `<canvas>` sont
+          // sous `@if (tempsReel())` dans le template : au tout premier
+          // chargement, ils n'existent pas encore dans le DOM au moment où ce
+          // callback s'exécute — un appel synchrone (ou même un `setTimeout`
+          // mal placé) trouvait donc des références de canvas encore
+          // `undefined` et abandonnait le dessin en silence, d'où des
+          // graphiques vides à l'ouverture du tableau de bord (qui ne
+          // s'affichaient qu'au chargement suivant, une fois les <canvas>
+          // déjà présents dans le DOM depuis le tour précédent).
+          afterNextRender(() => this.dessinerGraphiquesSiPossible(), { injector: this.injector });
         },
         error: () =>
           this.erreur.set(
