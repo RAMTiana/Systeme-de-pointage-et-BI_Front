@@ -39,9 +39,9 @@
         </button>
       }
     </div>
-    @if (motifSortie() !== 'normale') {
+    @if (motifSortie() === 'autre') {
       <div class="field">
-        <label>Commentaire {{ motifSortie() === 'autre' ? '(obligatoire)' : '(facultatif)' }}</label>
+        <label>Commentaire (obligatoire)</label>
         <input
           [ngModel]="commentaireSortie()"
           (ngModelChange)="commentaireSortie.set($event)"
