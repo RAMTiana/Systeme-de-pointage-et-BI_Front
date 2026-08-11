@@ -30,7 +30,7 @@
         <input id="fonction" type="text" formControlName="fonction" placeholder="Ex. Chef de bureau" />
       </div>
       <div class="field">
-        <label for="idService">Service principal</label>
+        <label for="idService">Division principal</label>
         <select id="idService" formControlName="id_service">
           <option [ngValue]="null">Aucun</option>
           @for (service of services; track service.id_service) {
