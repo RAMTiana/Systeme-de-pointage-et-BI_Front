@@ -18,8 +18,14 @@
       }
     }
 
-    <div class="sidebar-foot">
-      <div class="avatar-sm">{{ initiales() }}</div>
+    <div class="sidebar-foot clickable" routerLink="/mon-profil" (click)="fermerMenu()" title="Mon profil">
+      <div class="avatar-sm">
+        @if (authService.utilisateur()?.photo_profil) {
+          <img [src]="authService.utilisateur()?.photo_profil" alt="Photo de profil" />
+        } @else {
+          {{ initiales() }}
+        }
+      </div>
       <div class="who">
         {{ authService.utilisateur()?.nom_complet }}
         <span>{{ authService.utilisateur()?.role?.nom_role }}</span>

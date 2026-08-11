@@ -1,0 +1,74 @@
+<div class="topbar">
+  <h2>Mon profil</h2>
+</div>
+
+@if (erreur()) {
+  <div class="card" style="border-color: var(--srb-coral); margin-bottom: 16px">
+    <p style="color: var(--srb-coral); margin: 0">{{ erreur() }}</p>
+  </div>
+}
+@if (messageSucces()) {
+  <div class="card" style="border-color: var(--srb-teal); margin-bottom: 16px">
+    <p style="color: var(--srb-teal-ink); margin: 0">{{ messageSucces() }}</p>
+  </div>
+}
+
+<div class="card" style="max-width: 520px">
+  <h3>Informations personnelles</h3>
+  <p class="sub">Le login et l'e-mail sont réservés à la gestion par un administrateur.</p>
+
+  <div style="display: flex; align-items: center; gap: 20px; margin: 16px 0 24px">
+    <div class="profil-avatar">
+      @if (apercuPhoto()) {
+        <img [src]="apercuPhoto()" alt="Photo de profil" />
+      } @else {
+        <span>{{ initiales() }}</span>
+      }
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <input
+        #champFichier
+        type="file"
+        accept="image/png, image/jpeg, image/webp"
+        style="display: none"
+        (change)="surChangementFichier($event)"
+      />
+      <button type="button" class="btn" (click)="declencherSelectionFichier()">
+        <i class="ti ti-camera"></i> Choisir une photo
+      </button>
+      @if (apercuPhoto()) {
+        <button type="button" class="btn" (click)="supprimerPhoto()">
+          <i class="ti ti-trash"></i> Retirer la photo
+        </button>
+      }
+      <p class="muted" style="margin: 0; font-size: 12px">JPEG, PNG ou WebP. Recadrée et compressée automatiquement.</p>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="nomComplet">Nom complet</label>
+    <input id="nomComplet" type="text" [(ngModel)]="nomComplet" name="nomComplet" />
+  </div>
+
+  <div class="field">
+    <label>Login</label>
+    <input type="text" [value]="utilisateur()?.login" disabled />
+  </div>
+
+  <div class="field">
+    <label>E-mail</label>
+    <input type="text" [value]="utilisateur()?.email" disabled />
+  </div>
+
+  <div class="field">
+    <label>Rôle</label>
+    <input type="text" [value]="utilisateur()?.role?.nom_role" disabled />
+  </div>
+
+  <div class="modal-actions" style="justify-content: flex-start; padding-top: 8px">
+    <button type="button" class="btn accent" [disabled]="enregistrementEnCours()" (click)="enregistrer()">
+      <i class="ti ti-check"></i> {{ enregistrementEnCours() ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</div>

@@ -24,5 +24,12 @@ export interface UtilisateurCourant {
   actif: boolean;
   email_verifie: boolean;
   auth_provider: 'local' | 'google';
+  photo_profil?: string | null;
   role: Role;
+}
+
+export interface ProfilUpdate {
+  nom_complet?: string;
+  /** Data URL base64 (JPEG/PNG/WebP, 2 Mo max décodé). Chaîne vide pour supprimer la photo actuelle. */
+  photo_profil?: string;
 }

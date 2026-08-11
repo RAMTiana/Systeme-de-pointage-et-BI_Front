@@ -24,6 +24,7 @@ export interface UtilisateurAdminOut {
   email_verifie: boolean;
   auth_provider: 'local' | 'google';
   date_creation: string;
+  photo_profil?: string | null;
   role: RoleLight;
 }
 
@@ -39,6 +40,8 @@ export interface UtilisateurUpdate {
   login?: string;
   email?: string;
   nom_complet?: string;
+  /** Data URL base64 (JPEG/PNG/WebP, 2 Mo max décodé). Chaîne vide pour supprimer la photo actuelle. */
+  photo_profil?: string;
 }
 
 export interface RoleChangeRequest {

@@ -11,6 +11,12 @@ import { UtilisateurFormModalComponent } from '../utilisateur-form-modal/utilisa
 
 const LIMITE_PAR_PAGE = 20;
 
+/** Sur un refus 403 (ex. chef de service visant un compte Administrateur), l'API
+ * renvoie un message précis dans `detail` : on le remonte tel quel à l'utilisateur. */
+function messageErreur(err: any, messageParDefaut: string): string {
+  return err?.status === 403 && err?.error?.detail ? err.error.detail : messageParDefaut;
+}
+
 type Onglet = 'comptes' | 'roles';
 
 @Component({
@@ -191,7 +197,7 @@ export class UtilisateursListComponent implements OnInit, OnDestroy {
         this.erreurModale.set(
           err.status === 409
             ? 'Ce login ou cet e-mail est déjà utilisé par un autre compte.'
-            : "Impossible d'enregistrer le compte. Vérifiez les champs saisis."
+            : messageErreur(err, "Impossible d'enregistrer le compte. Vérifiez les champs saisis.")
         ),
     });
   }
@@ -209,8 +215,8 @@ export class UtilisateursListComponent implements OnInit, OnDestroy {
         this.charger();
         this.chargerComptesParRole(this.roles());
       },
-      error: () => {
-        this.erreur.set('Impossible de changer le rôle de ce compte.');
+      error: (err) => {
+        this.erreur.set(messageErreur(err, 'Impossible de changer le rôle de ce compte.'));
         this.charger();
       },
     });
@@ -226,7 +232,7 @@ export class UtilisateursListComponent implements OnInit, OnDestroy {
 
     requete.subscribe({
       next: () => this.charger(),
-      error: () => this.erreur.set('Impossible de changer le statut de ce compte.'),
+      error: (err) => this.erreur.set(messageErreur(err, 'Impossible de changer le statut de ce compte.')),
     });
   }
 
@@ -239,7 +245,7 @@ export class UtilisateursListComponent implements OnInit, OnDestroy {
         this.charger();
         this.chargerComptesParRole(this.roles());
       },
-      error: () => this.erreur.set('Impossible de supprimer ce compte.'),
+      error: (err) => this.erreur.set(messageErreur(err, 'Impossible de supprimer ce compte.')),
     });
   }
 
@@ -264,7 +270,7 @@ export class UtilisateursListComponent implements OnInit, OnDestroy {
       .pipe(finalize(() => this.reinitialisationEnCours.set(false)))
       .subscribe({
         next: () => this.fermerReinitialisation(),
-        error: () => this.erreurReinitialisation.set('Impossible de réinitialiser ce mot de passe.'),
+        error: (err) => this.erreurReinitialisation.set(messageErreur(err, 'Impossible de réinitialiser ce mot de passe.')),
       });
   }
 

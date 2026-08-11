@@ -5,7 +5,7 @@ import { Observable, shareReplay, tap, catchError, of, finalize } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { SKIP_AUTH_REFRESH } from '../interceptors/auth.interceptor';
-import { Token, UtilisateurCourant } from '../models/auth.model';
+import { ProfilUpdate, Token, UtilisateurCourant } from '../models/auth.model';
 
 const ACCESS_TOKEN_KEY = 'srb_access_token';
 const REFRESH_TOKEN_KEY = 'srb_refresh_token';
@@ -58,6 +58,13 @@ export class AuthService {
   chargerProfil(): Observable<UtilisateurCourant> {
     return this.http
       .get<UtilisateurCourant>(`${environment.apiUrl}/auth/me`)
+      .pipe(tap((utilisateur) => this._utilisateur.set(utilisateur)));
+  }
+
+  /** Auto-édition du profil connecté (nom affiché, photo) — PATCH /auth/me. */
+  modifierMonProfil(payload: ProfilUpdate): Observable<UtilisateurCourant> {
+    return this.http
+      .patch<UtilisateurCourant>(`${environment.apiUrl}/auth/me`, payload)
       .pipe(tap((utilisateur) => this._utilisateur.set(utilisateur)));
   }
 
