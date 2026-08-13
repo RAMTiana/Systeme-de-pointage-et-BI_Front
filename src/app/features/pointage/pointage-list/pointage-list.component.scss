@@ -1,3 +1,9 @@
+// `.btn` (styles/_layout.scss) ne définit pas `text-decoration`, utile pour les
+// <button> mais pas pour ce lien <a> vers le poste de pointage public.
+.topbar .actions a.btn {
+  text-decoration: none;
+}
+
 .page-tabs {
   display: flex;
   gap: 6px;

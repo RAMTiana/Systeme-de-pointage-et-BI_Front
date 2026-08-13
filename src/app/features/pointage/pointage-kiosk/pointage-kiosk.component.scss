@@ -1,0 +1,77 @@
+#kiosk-screen {
+  min-height: 100vh;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.22) 0%, transparent 26%),
+    linear-gradient(135deg, var(--srb-blue) 0%, #1a5f89 45%, var(--srb-blue-dark) 100%);
+}
+
+.kiosk-header {
+  width: min(100%, 900px);
+  text-align: center;
+  padding-top: 0.5rem;
+  color: #fff;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.brand-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: contain;
+  background: #fff;
+  padding: 4px;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.kiosk-header h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.kiosk-header .sub {
+  margin: 0.5rem 0 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.kiosk-card {
+  width: min(100%, 900px);
+  background: color-mix(in srgb, var(--card) 97%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card) 55%, transparent);
+  border-radius: 24px;
+  padding: 1.25rem;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
+}
+
+@media (max-width: 720px) {
+  .kiosk-header h1 {
+    font-size: 18px;
+  }
+
+  .kiosk-card {
+    padding: 0.85rem;
+    border-radius: 18px;
+  }
+}

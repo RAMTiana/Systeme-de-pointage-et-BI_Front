@@ -1,13 +1,17 @@
 <div class="topbar">
   <h2>Pointage</h2>
-  @if (ongletActif() === 'historique') {
-    <div class="actions">
+  <div class="actions">
+    @if (ongletActif() === 'historique') {
       <div class="search-box">
         <i class="ti ti-search"></i>
         <input placeholder="Agent, matricule..." [ngModel]="recherche()" (ngModelChange)="recherche.set($event)" />
       </div>
-    </div>
-  }
+    }
+    <a class="btn" href="/pointage-kiosk" target="_blank" rel="noopener"
+       title="Ouvre le poste de pointage public dans un nouvel onglet — à afficher sur les tablettes/postes des agents pour pointer en parallèle, sans file d'attente.">
+      <i class="ti ti-device-tablet"></i> Ouvrir le poste public
+    </a>
+  </div>
 </div>
 
 <div class="page-tabs">

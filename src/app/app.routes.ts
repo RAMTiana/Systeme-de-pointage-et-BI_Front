@@ -8,6 +8,17 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login/login.component').then((m) => m.LoginComponent),
   },
   {
+    // Poste de pointage public (kiosque) : volontairement SANS authGuard, pour que
+    // n'importe quel appareil du bureau puisse l'ouvrir sans compte staff et que les
+    // agents pointent en parallèle sur plusieurs postes (fini la file d'attente sur
+    // un seul poste tenu par une session connectée). L'authentification de cette page
+    // se fait via l'en-tête X-Device-Key (cf. PointageScanComponent / PointageService),
+    // pas par un compte utilisateur. À ne déployer que sur le réseau interne du bureau.
+    path: 'pointage-kiosk',
+    loadComponent: () =>
+      import('./features/pointage/pointage-kiosk/pointage-kiosk.component').then((m) => m.PointageKioskComponent),
+  },
+  {
     path: '',
     loadComponent: () => import('./layout/shell/shell.component').then((m) => m.ShellComponent),
     canActivate: [authGuard],
